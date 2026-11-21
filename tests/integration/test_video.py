@@ -118,9 +118,21 @@ def test_failed_render_leaves_no_file(source_video: Path, tmp_path: Path) -> Non
     info = probe_source(source_video)
     out = tmp_path / "sub" / "clip.mp4"
     beyond = FrameRange(start_frame=info.total_frames - 50, n_frames=100)
-    with pytest.raises(VideoError):
+    # The message proves the engine's own frame count fired, not some other failure.
+    with pytest.raises(VideoError, match="produced 50 frames instead of 100"):
         render_clip(source_video, beyond, info.fps, centre_crop(info.width, info.height), out)
     assert not out.exists()
+    assert not out.with_name("clip.mp4.partial").exists()
+
+
+def test_failed_render_leaves_existing_output_untouched(source_video: Path, tmp_path: Path) -> None:
+    info = probe_source(source_video)
+    out = tmp_path / "clip.mp4"
+    out.write_bytes(b"EARLIER CLIP")
+    beyond = FrameRange(start_frame=info.total_frames - 50, n_frames=100)
+    with pytest.raises(VideoError, match="produced 50 frames instead of 100"):
+        render_clip(source_video, beyond, info.fps, centre_crop(info.width, info.height), out)
+    assert out.read_bytes() == b"EARLIER CLIP"
     assert not out.with_name("clip.mp4.partial").exists()
 
 

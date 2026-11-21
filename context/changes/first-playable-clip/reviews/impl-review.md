@@ -5,7 +5,7 @@
 - **Scope**: Full plan
 - **Reviewed phases**: 1, 2, 3
 - **Date**: 2026-11-21
-- **Verdict**: NEEDS ATTENTION (both warnings F1 and F2 fixed in triage, 2026-11-21; F3–F6 pending)
+- **Verdict**: NEEDS ATTENTION (F1, F2, F3 and F6 fixed in triage, 2026-11-21; F4 and F5 pending)
 - **Findings**: 0 critical, 2 warnings, 4 observations
 
 Reviewed commits: `b65638f` (phase 1), `2eff593` (phase 2), `0d07d52` (phase 3). The review read
@@ -124,7 +124,7 @@ on the user's word.
 - **Location**: tests/integration/test_video.py:117, tests/unit/test_cli.py:81
 - **Detail**: (a) "Leaves any existing output untouched" is in the contract and holds (verified by hand here), but no test pre-creates an output; `test_failed_render_leaves_no_file` starts from an empty directory. (b) The same test accepts any `VideoError`; it would also pass if the render failed for an unrelated reason (for example ffmpeg missing a codec), so it does not prove that the frame count check is what fired. (c) The mappings `FramingError` → 2 and a probe `VideoError` → 1 have no unit test; only the render `VideoError` is covered. None of these are named cases in the plan, so this is not drift.
 - **Fix**: In `test_failed_render_leaves_no_file` write known bytes to the output first and assert they are unchanged, and add `match="produced 50 frames instead of 100"`. Add two three-line CLI unit tests for the missing mappings.
-- **Decision**: PENDING
+- **Decision**: FIXED — `test_failed_render_leaves_no_file` now matches `produced 50 frames instead of 100`; new `test_failed_render_leaves_existing_output_untouched` pre-creates the output and asserts its bytes; new CLI unit tests `test_probe_failure_exits_1_and_does_not_render` and `test_source_narrower_than_9_16_exits_2_and_does_not_render`.
 
 ### F4 — The probe runs before the window text is parsed
 
@@ -165,4 +165,4 @@ on the user's word.
   - Tradeoff: Structure built for a decision that has not been taken; contradicts the plan's "whether S-02 needs pipes is S-02's research".
   - Confidence: MEDIUM — the seam may land in the wrong place for a two-process pipeline.
   - Blind spot: None significant.
-- **Decision**: PENDING
+- **Decision**: FIXED via Fix A — the publish step (source guard, partial file, frame count check, rename, clean-up) is the private context manager `_publishing` in `shell/video.py`; the filter command is built by `_render_command`; `render_clip` keeps its signature and is two lines. The frame-count message no longer carries the start frame. The helps/hinders list above stays as input to S-02's research; nothing else was restructured.

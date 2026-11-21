@@ -10,6 +10,7 @@ non-ASCII characters.
 import contextlib
 import json
 import subprocess
+from collections.abc import Iterator
 from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
@@ -114,16 +115,42 @@ def partial_path(output: Path) -> Path:
     return output.with_name(output.name + ".partial")
 
 
-def render_clip(
-    source: Path, frames: FrameRange, fps: Fraction, crop: CropBox, output: Path
-) -> None:
-    """Render ``frames`` of ``source`` as a 1080x1920 clip at ``output``, atomically."""
+@contextlib.contextmanager
+def _publishing(source: Path, output: Path, n_frames: int) -> Iterator[Path]:
+    """Yield the partial file to render into; publish it as ``output`` only when it is right.
+
+    The publish step does not depend on how the frames are produced: the caller writes the partial
+    file inside the ``with`` block, then the frame count is checked and the file renamed over
+    ``output``. On any failure the partial file is removed and an existing ``output`` is left
+    untouched.
+    """
     partial = partial_path(output)
     # Checked before anything is created: the output is renamed over and the partial file is
     # removed on failure, so a source in either place would be destroyed.
     if source.resolve() in (output.resolve(), partial.resolve()):
         raise VideoError(f"refusing to render: {source} is the output or its temporary file")
-    command = [
+    published = False
+    try:
+        output.parent.mkdir(parents=True, exist_ok=True)
+        yield partial
+        produced = _count_frames(partial)
+        if produced != n_frames:
+            raise VideoError(f"render produced {produced} frames instead of {n_frames}")
+        partial.replace(output)
+        published = True
+    except OSError as exc:
+        raise VideoError(f"render failed: {exc}") from exc
+    finally:
+        if not published:
+            # Clean-up must not replace the error being reported.
+            with contextlib.suppress(OSError):
+                partial.unlink(missing_ok=True)
+
+
+def _render_command(
+    source: Path, frames: FrameRange, fps: Fraction, crop: CropBox, target: Path
+) -> list[str]:
+    return [
         "ffmpeg",
         "-nostdin",
         "-v",
@@ -161,24 +188,13 @@ def render_clip(
         "-bitexact",
         "-f",
         "mp4",
-        str(partial),
+        str(target),
     ]
-    published = False
-    try:
-        output.parent.mkdir(parents=True, exist_ok=True)
-        _run(command)
-        produced = _count_frames(partial)
-        if produced != frames.n_frames:
-            raise VideoError(
-                f"render produced {produced} frames instead of {frames.n_frames}"
-                f" (start frame {frames.start_frame})"
-            )
-        partial.replace(output)
-        published = True
-    except OSError as exc:
-        raise VideoError(f"render failed: {exc}") from exc
-    finally:
-        if not published:
-            # Clean-up must not replace the error being reported.
-            with contextlib.suppress(OSError):
-                partial.unlink(missing_ok=True)
+
+
+def render_clip(
+    source: Path, frames: FrameRange, fps: Fraction, crop: CropBox, output: Path
+) -> None:
+    """Render ``frames`` of ``source`` as a 1080x1920 clip at ``output``, atomically."""
+    with _publishing(source, output, frames.n_frames) as partial:
+        _run(_render_command(source, frames, fps, crop, partial))

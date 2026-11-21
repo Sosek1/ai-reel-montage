@@ -19,6 +19,8 @@ class Shell:
         self.probed: list[Path] = []
         self.rendered: list[tuple[Path, FrameRange, Fraction, CropBox, Path]] = []
         self.render_error: VideoError | None = None
+        self.probe_error: VideoError | None = None
+        self.info = INFO
 
 
 @pytest.fixture
@@ -27,7 +29,9 @@ def shell(monkeypatch: pytest.MonkeyPatch) -> Shell:
 
     def probe(path: Path) -> SourceInfo:
         fake.probed.append(path)
-        return INFO
+        if fake.probe_error is not None:
+            raise fake.probe_error
+        return fake.info
 
     def render(
         source: Path, frames: FrameRange, fps: Fraction, crop: CropBox, output: Path
@@ -128,3 +132,21 @@ def test_input_named_as_the_partial_file_exits_2_and_does_not_render(
     assert main(argv) == 2
     assert capsys.readouterr().err.startswith("error: ")
     assert shell.probed == [] and shell.rendered == []
+
+
+def test_probe_failure_exits_1_and_does_not_render(
+    shell: Shell, capsys: pytest.CaptureFixture[str]
+) -> None:
+    shell.probe_error = VideoError("ffprobe failed")
+    assert main(_args()) == 1
+    assert capsys.readouterr().err == "error: ffprobe failed\n"
+    assert shell.rendered == []
+
+
+def test_source_narrower_than_9_16_exits_2_and_does_not_render(
+    shell: Shell, capsys: pytest.CaptureFixture[str]
+) -> None:
+    shell.info = SourceInfo(width=600, height=1080, fps=Fraction(50), total_frames=297_469)
+    assert main(_args()) == 2
+    assert capsys.readouterr().err.startswith("error: source 600x1080 is narrower than 9:16")
+    assert shell.rendered == []
