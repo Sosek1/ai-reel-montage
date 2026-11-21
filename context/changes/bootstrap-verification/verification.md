@@ -58,9 +58,11 @@ Checks: `uv run pytest` 1 passed; `uv run mypy` clean; `uv run ruff check` clean
 | --- | --- |
 | uv | 0.13.9 (installed this session) |
 | Python | 3.14.4 (system), pinned in .python-version |
-| ffmpeg | NOT INSTALLED (`ffmpeg` not found on PATH; apt/sudo required) |
+| ffmpeg | 8.0.1-3ubuntu2 (/usr/bin/ffmpeg, ffprobe present); libx264, aac, crop/scale/concat filters available; installed manually by the user after the first run |
 
-**Action for the user before any video work:** `sudo apt install ffmpeg`, then record `ffmpeg -version` here. Nothing in this step needs ffmpeg; the first integration/video phase will.
+**Smoke test (real source):** 2 s cut at 600 s from the 99-minute match, `crop=608:1080,scale=1080:1920`, `libx264 -threads 1 -bitexact` -> 1080x1920, 100 frames, ~6 s wall time.
+
+**Finding:** the source video is **AV1** (1920x1080, 50 fps; audio opus). Decoded fine by `libdav1d`/`libaom`. AV1 decode will be the dominant render cost.
 
 ## Post-scaffold audit
 
@@ -84,4 +86,4 @@ Checks: `uv run pytest` 1 passed; `uv run mypy` clean; `uv run ruff check` clean
 
 ## Next steps
 
-Next chain step: `/10x-agents-md` (Sonnet). Install ffmpeg first (see System tooling).
+Next chain step: `/10x-agents-md` (Sonnet).
