@@ -42,7 +42,7 @@ Lower-league footballers need reels for their own profiles, especially around tr
 | ID   | Change ID                  | Outcome (user can …)                                                              | Prerequisites                                  | PRD refs                   | Status   |
 | ---- | -------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------- | -------- |
 | S-01 | first-playable-clip        | name one timestamp window and get a playable 9:16 clip trimmed from the match     | —                                              | FR-001a, US-01             | done     |
-| S-02 | ball-following-crop        | get a clip whose crop follows the ball from the tracking data                     | S-01                                           | FR-001, FR-002, FR-005, US-01 | proposed |
+| S-02 | ball-following-crop        | get a clip whose crop follows the ball from the tracking data                     | S-01                                           | FR-001, FR-002, FR-005, US-01 | ready    |
 | S-03 | smooth-camera-path         | get a clip whose frame moves like deliberate camera work, not a jittery follow    | S-02, evaluation windows named by the user     | FR-002, FR-005, US-01      | proposed |
 | S-04 | adaptive-zoom              | get a clip that is wide while play builds and tight at the decisive moment        | S-03                                           | FR-005, US-01              | proposed |
 | S-05 | multi-window-reel          | name 3–5 windows and get one chronological, hard-cut reel, identical on re-runs   | S-02, evaluation windows named by the user     | FR-004, FR-006, FR-007, US-01 | proposed |
@@ -92,7 +92,7 @@ None. Every technical element is introduced inside the first slice that needs it
 - **Unknowns:**
   - Which documented fallback keeps the crop stable where the ball position is missing or predicted rather than detected (about 26% of positions)? — Owner: user. Block: no. (Starts as hold-last-known; refined by S-03 and by Open Roadmap Question 1.)
 - **Risk:** The first contact between the tracking file and real footage: the tracking is sampled at 16.67 fps over a 50 fps source, so times have to be mapped between the two, and the file is 398 MB so only the needed window may be read. This is the earliest slice that can show whether the play stays in frame; it is verified automatically (ball inside the crop for every output frame), not by eye.
-- **Status:** proposed
+- **Status:** ready
 
 ### S-03: Smooth camera path
 
@@ -150,7 +150,7 @@ None. Every technical element is introduced inside the first slice that needs it
 | Roadmap ID | Change ID              | Suggested issue title                                   | Ready for `/10x-plan` | Notes                                                           |
 | ---------- | ---------------------- | ------------------------------------------------------- | --------------------- | --------------------------------------------------------------- |
 | S-01       | first-playable-clip    | Trim a named window into a playable 9:16 clip           | yes                   | Run `/10x-new first-playable-clip`                              |
-| S-02       | ball-following-crop    | Crop follows the ball from tracking data                | no                    | Waits for S-01                                                  |
+| S-02       | ball-following-crop    | Crop follows the ball from tracking data                | no                    | Run `/10x-research ball-following-crop`                |
 | S-03       | smooth-camera-path     | Smooth, damped camera path from the ball track          | no                    | Waits for S-02 and the evaluation windows; research OQ 1 first  |
 | S-04       | adaptive-zoom          | Time-varying zoom: wide while building, tight at decisive moment | no           | Waits for S-03                                                  |
 | S-05       | multi-window-reel      | Chronological hard-cut reel from 3–5 windows            | no                    | Waits for S-02 and the evaluation windows                       |
