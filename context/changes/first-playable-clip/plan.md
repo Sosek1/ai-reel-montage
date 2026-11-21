@@ -489,11 +489,11 @@ None. No data, no prior behaviour to preserve beyond `--version`.
 
 #### Automated
 
-- [ ] 1.1 Unit tests pass: `uv run pytest -m "not integration"`
-- [ ] 1.2 Type checking passes: `uv run mypy`
-- [ ] 1.3 Linting passes: `uv run ruff check`
-- [ ] 1.4 Formatting is clean: `uv run ruff format --check src tests`
-- [ ] 1.5 `core/` imports none of `subprocess`, `os`, `pathlib`, `json`, `time`, `random`
+- [x] 1.1 Unit tests pass: `uv run pytest -m "not integration"`
+- [x] 1.2 Type checking passes: `uv run mypy`
+- [x] 1.3 Linting passes: `uv run ruff check`
+- [x] 1.4 Formatting is clean: `uv run ruff format --check src tests`
+- [x] 1.5 `core/` imports none of `subprocess`, `os`, `pathlib`, `json`, `time`, `random`
 
 ### Phase 2: Probe and render in the IO shell
 
