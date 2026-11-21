@@ -1,0 +1,7 @@
+# Source materials from part one — multi-gigabyte video and tracking data.
+# These are inputs, not artifacts: they are transferred out of band, never committed.
+transfer-*/
+
+# Rendered output
+out/
+*.mp4
