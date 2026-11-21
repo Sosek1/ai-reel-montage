@@ -46,3 +46,56 @@ Judgment work sits on Fable because Fable draws from a separate weekly limit poo
 deliberately preserves the shared "all models" budget for token-heavy implementation.
 
 For the full chain, what each step leaves behind, and the TDD split, invoke the `10x-chain` skill.
+
+# Stack conventions (Python + uv + ffmpeg)
+
+Written by `/10x-bootstrapper`. The stack failed the "convention-based" quality gate, so this
+section is the compensating control. Follow it exactly.
+
+## Commands
+
+All via `uv run` (never bare `python`/`pytest`). Python version is pinned in `.python-version`.
+
+- Install/sync: `uv sync`
+- Tests: `uv run pytest` (fast tier: `uv run pytest -m "not integration"`)
+- Types: `uv run mypy` (strict, covers `src` and `tests`)
+- Lint: `uv run ruff check` — fix with `uv run ruff check --fix`
+- Format: `uv run ruff format src tests`
+- Run the CLI: `uv run ai-reel-montage --help`
+
+Before every commit: ruff check, ruff format, mypy and pytest must all pass.
+
+## Layout (fixed — do not invent new top-level locations)
+
+- `src/ai_reel_montage/` — the only package. `src` layout, built with `uv_build`.
+  - `core/` — **pure core**: numpy/scipy maths (camera path, zoom, ordering, window logic).
+  - `shell/` — **IO shell**: ijson streaming of the tracking JSON, ffmpeg pipes, filesystem.
+  - `cli.py` — argument parsing and wiring only.
+- `tests/unit/` — tests for `core` and `cli`; no video, no real files, no subprocess.
+- `tests/integration/` — need ffmpeg and/or `transfer-*/` data; mark `@pytest.mark.integration`.
+- `context/` — chain artifacts. Never edit from code or tooling.
+
+## Pure core / IO shell rule
+
+The camera-path rule (ball position over time -> vertical path + zoom so the action fits 9:16)
+is the whole value of v1 and is built test-first. Therefore:
+
+- `core/` never imports `subprocess`, `os`, `pathlib`, `open`, `ijson`, `json` file loading,
+  network, `time`, `datetime.now` or `random` without an explicit seed. It takes arrays/dataclasses
+  in and returns arrays/dataclasses out.
+- `shell/` may call `core/`; `core/` never imports `shell/` or `cli`.
+- Determinism: same inputs => byte-identical output. No wall clock, no unseeded randomness, no
+  dict/set iteration order dependence in `core/`. ffmpeg runs single-threaded with bit-exact flags.
+
+## Typing and style
+
+- mypy strict is on; no untyped defs, no `Any` leaking from public functions. `scipy`/`ijson`
+  stubs are ignored via config — wrap them in typed functions at the boundary.
+- Prefer frozen `dataclass`es and `numpy.typing.NDArray` for data crossing module boundaries.
+- Line length 100, double quotes, imports sorted by ruff. Do not silence a rule without a comment.
+
+## Scope guards
+
+Do not add a web framework, database, auth, GPU dependency or paid API — the PRD calls for none.
+Never read `transfer-*/` in unit tests; large data stays behind `integration` marks.
+Never run ffmpeg over the 99-minute source unbounded — always trim by window.

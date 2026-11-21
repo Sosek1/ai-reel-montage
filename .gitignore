@@ -5,3 +5,13 @@ transfer-*/
 # Rendered output
 out/
 *.mp4
+
+# Python / uv
+__pycache__/
+*.py[cod]
+.venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+dist/
+*.egg-info/
