@@ -24,6 +24,11 @@ preference; it is how context is kept small and how the user stays in control.
 4. **Read the artifacts, do not re-derive them.** Earlier decisions live in `context/foundation/`
    and `context/changes/`. Read them instead of re-asking the user or re-reasoning from scratch.
 5. **If you are unsure which step this session is for, ask.** Do not guess and do not do two.
+6. **Research method depends on the question.** Where a slice asks "how long does this take" or
+   "does this produce identical output", measure it against the real materials — do not read about
+   it. Where a slice asks "which technique", run the three-stage research first: web search, then
+   a documentation knowledge base, then synthesis. The `10x-chain` skill says which slices are
+   which and what each stage writes.
 
 ## Model per step
 

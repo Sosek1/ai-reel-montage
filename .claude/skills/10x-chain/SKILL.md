@@ -42,6 +42,38 @@ Steps 6–12 repeat per slice. Steps 1–5 run once.
 protocol *and* the stack conventions, so `AGENTS.md` would duplicate it and the two would drift.
 Reconsider only if agents other than Claude Code start working in this repository.
 
+## How to research a slice
+
+Two kinds of question turn up in this project, and they deserve opposite methods. Picking the
+wrong one wastes a session either way — by reading about something you could have measured in a
+minute, or by guessing at an algorithm that has a literature.
+
+**Empirical questions — measure, do not read.** "How long does trimming a window from the AV1
+source take?" "Do two encodes of the same window produce identical bytes?" "Does the tracking file
+fit in memory?" The real materials are on disk at `transfer-01a1f923/`; run the command, record it
+with its measured time, and cite the measurement. A web search here returns blog posts about
+flags you could have tested directly. S-01 is entirely of this kind.
+
+**Technique questions — run three stages.** "How should a noisy ball track be smoothed into a
+camera path that reads as deliberate?" has a literature: virtual camera work in sports broadcast,
+causal smoothing versus Kalman filtering, damping without lag, weighting samples by confidence.
+Guessing here means discovering in implementation that the path drifts. S-03 is the clear case;
+S-02 and S-04 partly so.
+
+The three stages, each ending in a commit so the next can start from a clean context:
+
+| Stage | Tool | Writes |
+|---|---|---|
+| 1. Web research | Exa MCP (`web_search_exa`, `agent_run`) | `context/changes/<id>/research/web-findings.md` |
+| 2. Knowledge base | Context7 MCP, on the libraries stage 1 surfaced | `context/changes/<id>/research/knowledge-base.md` |
+| 3. Synthesis | `/10x-research` | the change's research document |
+
+Run them as three sessions rather than one. Web research pulls in a lot of context, and synthesis
+is the stage that suffers most in a full window. For an empirical slice, stage 3 alone is the
+whole research step.
+
+Prefer Context7 over web search for library documentation throughout, per the user's global rules.
+
 ## Which plan phases go through TDD
 
 The domain rule of this product is a calculation: from per-clip framing targets, compute a
