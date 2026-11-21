@@ -41,7 +41,7 @@ Lower-league footballers need reels for their own profiles, especially around tr
 
 | ID   | Change ID                  | Outcome (user can …)                                                              | Prerequisites                                  | PRD refs                   | Status   |
 | ---- | -------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------- | -------- |
-| S-01 | first-playable-clip        | name one timestamp window and get a playable 9:16 clip trimmed from the match     | —                                              | FR-001a, US-01             | planning |
+| S-01 | first-playable-clip        | name one timestamp window and get a playable 9:16 clip trimmed from the match     | —                                              | FR-001a, US-01             | done     |
 | S-02 | ball-following-crop        | get a clip whose crop follows the ball from the tracking data                     | S-01                                           | FR-001, FR-002, FR-005, US-01 | proposed |
 | S-03 | smooth-camera-path         | get a clip whose frame moves like deliberate camera work, not a jittery follow    | S-02, evaluation windows named by the user     | FR-002, FR-005, US-01      | proposed |
 | S-04 | adaptive-zoom              | get a clip that is wide while play builds and tight at the decisive moment        | S-03                                           | FR-005, US-01              | proposed |
@@ -79,7 +79,7 @@ None. Every technical element is introduced inside the first slice that needs it
 - **Unknowns:**
   - How long does trimming a ~10 s window take on the AV1 source when the cut is made before decoding rather than after? The reel must come out in minutes, so the trim has to bound decode work to the window — measure it here, on a bounded window, never over the whole recording. — Owner: TBD (answered by this slice's own timing). Block: no.
 - **Risk:** Sequenced first because the whole pipeline rides on video being cut cheaply; software AV1 decoding is slow, and discovering that after the camera maths is built would invalidate the render-time guardrail. Any timestamp works as a test window — no evaluation set is needed because nothing here is judged for watchability.
-- **Status:** planning
+- **Status:** done
 
 ### S-02: Ball-following crop
 
@@ -176,3 +176,5 @@ None. Every technical element is introduced inside the first slice that needs it
 ## Milestone History
 
 ## Done
+
+- **S-01: First playable clip** — Archived 2026-11-21 → `context/archive/2026-11-21-first-playable-clip/`. Lesson: —.

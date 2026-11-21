@@ -1,10 +1,10 @@
 ---
 change_id: first-playable-clip
 title: First playable clip
-status: impl_reviewed
+status: archived
 created: 2026-11-21
 updated: 2026-11-21
-archived_at: null
+archived_at: 2026-11-21T17:02:42Z
 ---
 
 ## Notes
