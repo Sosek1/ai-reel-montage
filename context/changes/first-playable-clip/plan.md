@@ -499,16 +499,16 @@ None. No data, no prior behaviour to preserve beyond `--version`.
 
 #### Automated
 
-- [ ] 2.1 Integration tests pass: `uv run pytest -m integration`
-- [ ] 2.2 Unit tests still pass: `uv run pytest -m "not integration"`
-- [ ] 2.3 Type checking passes: `uv run mypy`
-- [ ] 2.4 Linting passes: `uv run ruff check`
-- [ ] 2.5 Formatting is clean: `uv run ruff format --check src tests`
-- [ ] 2.6 `core/` does not import `shell`
+- [x] 2.1 Integration tests pass: `uv run pytest -m integration`
+- [x] 2.2 Unit tests still pass: `uv run pytest -m "not integration"`
+- [x] 2.3 Type checking passes: `uv run mypy`
+- [x] 2.4 Linting passes: `uv run ruff check`
+- [x] 2.5 Formatting is clean: `uv run ruff format --check src tests`
+- [x] 2.6 `core/` does not import `shell`
 
 #### Manual
 
-- [ ] 2.7 The integration tier reports passes, not skips, on this machine
+- [x] 2.7 The integration tier reports passes, not skips, on this machine
 
 ### Phase 3: CLI wiring and end-to-end check
 
