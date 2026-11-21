@@ -68,7 +68,9 @@ All via `uv run` (never bare `python`/`pytest`). Python version is pinned in `.p
 - Format: `uv run ruff format src tests`
 - Run the CLI: `uv run ai-reel-montage --help`
 
-Before every commit: ruff check, ruff format, mypy and pytest must all pass.
+Before every commit: ruff check, ruff format, mypy and pytest must all pass. Run the tests as
+`REEL_REQUIRE_SOURCE=1 uv run pytest`: with the variable set, a missing recording or ffmpeg fails
+the integration tier instead of skipping it, so a green run means the video was really checked.
 
 ## Layout (fixed — do not invent new top-level locations)
 
