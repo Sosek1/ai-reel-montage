@@ -80,8 +80,11 @@ def _run(source: Path, window_text: str, output: Path) -> int:
         return _fail("the output's temporary file would overwrite the input", 2)
 
     try:
+        # Parsed before the probe: a malformed window is the caller's error (exit 2) whatever
+        # the input turns out to be, and costs no subprocess.
+        window = parse_window(window_text)
         info = probe_source(source)
-        frames = to_frame_range(parse_window(window_text), info.fps, info.total_frames)
+        frames = to_frame_range(window, info.fps, info.total_frames)
         crop = centre_crop(info.width, info.height)
         render_clip(source, frames, info.fps, crop, output)
     except (WindowError, FramingError) as exc:

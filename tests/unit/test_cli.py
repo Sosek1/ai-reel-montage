@@ -83,9 +83,10 @@ def test_window_past_end_exits_2_and_does_not_render(
 
 
 def test_malformed_window_exits_2(shell: Shell, capsys: pytest.CaptureFixture[str]) -> None:
+    shell.probe_error = VideoError("ffprobe failed")  # must not be reached, let alone win
     assert main(_args("nonsense")) == 2
-    assert capsys.readouterr().err.startswith("error: ")
-    assert shell.rendered == []
+    assert capsys.readouterr().err.startswith("error: invalid window")
+    assert shell.probed == [] and shell.rendered == []
 
 
 def test_render_failure_exits_1(shell: Shell, capsys: pytest.CaptureFixture[str]) -> None:

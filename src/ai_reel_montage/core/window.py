@@ -18,8 +18,9 @@ from fractions import Fraction
 
 # S[.f] | M:SS[.f] | H:MM:SS[.f]; ranges of the clock fields are checked after matching.
 _SECONDS = re.compile(r"(?P<s>\d+(?:\.\d+)?)")
-_MINUTES = re.compile(r"(?P<m>\d+):(?P<s>\d{1,2}(?:\.\d+)?)")
-_HOURS = re.compile(r"(?P<h>\d+):(?P<m>\d{1,2}):(?P<s>\d{1,2}(?:\.\d+)?)")
+# The fields after a colon are exactly two digits, as in the documented [h:]mm:ss form.
+_MINUTES = re.compile(r"(?P<m>\d+):(?P<s>\d{2}(?:\.\d+)?)")
+_HOURS = re.compile(r"(?P<h>\d+):(?P<m>\d{2}):(?P<s>\d{2}(?:\.\d+)?)")
 
 _MICRO = 10**6
 

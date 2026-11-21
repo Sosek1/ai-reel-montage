@@ -5,7 +5,7 @@
 - **Scope**: Full plan
 - **Reviewed phases**: 1, 2, 3
 - **Date**: 2026-11-21
-- **Verdict**: NEEDS ATTENTION (F1, F2, F3 and F6 fixed in triage, 2026-11-21; F4 and F5 pending)
+- **Verdict**: NEEDS ATTENTION (all six findings fixed in triage, 2026-11-21)
 - **Findings**: 0 critical, 2 warnings, 4 observations
 
 Reviewed commits: `b65638f` (phase 1), `2eff593` (phase 2), `0d07d52` (phase 3). The review read
@@ -134,7 +134,7 @@ on the user's word.
 - **Location**: src/ai_reel_montage/cli.py:81
 - **Detail**: The plan's call sequence is parse → probe → validate → crop → render. The code probes first and parses on the next line. Effects: a malformed window costs an `ffprobe` call, and a malformed window together with an unreadable input reports the probe failure with exit 1 instead of the window error with exit 2 (reproduced). `test_malformed_window_exits_2` does not assert that nothing was probed, so the order is not pinned. One more leniency in the same area: the clock-form regexes accept a one-digit seconds field (`1:5-1:9`), where the plan writes `M:SS`.
 - **Fix**: Call `parse_window` before `probe_source`, and assert `shell.probed == []` in `test_malformed_window_exits_2`. Either accept one-digit clock fields in the plan text or tighten the regex to `\d{2}`; with S-05 about to take windows from a list, decide it there.
-- **Decision**: PENDING
+- **Decision**: FIXED — `parse_window` runs before `probe_source` (`cli.py`); `test_malformed_window_exits_2` arms a probe failure and asserts nothing was probed. The clock-form regexes now require exactly two digits after each colon, as the plan's `M:SS` / `H:MM:SS` grammar says; `1:5-1:9` and two hour-form variants are added to the malformed cases.
 
 ### F5 — The integration tier can turn green by skipping
 
@@ -144,7 +144,7 @@ on the user's word.
 - **Location**: tests/integration/conftest.py:14
 - **Detail**: The fixture skips exactly as the plan asks — only for a missing tool or a missing recording, nothing wider — and on this machine all ten integration tests ran. But "passes, not skips" is enforced only by the manual item 2.7: if the `transfer-*/` directory is moved or renamed, `uv run pytest` stays green with ten skips and nothing about video is verified. Also, with more than one `.mp4` under `transfer-*/` the fixture silently takes the first by name, while the contract says "the single `.mp4`"; `test_probe_reports_source_properties` would then fail on the frame count rather than say why.
 - **Fix**: Make the fixture fail instead of skip when an environment variable such as `REEL_REQUIRE_SOURCE=1` is set, and use it for the pre-commit run on this machine; fail with a clear message when more than one recording is found.
-- **Decision**: PENDING
+- **Decision**: FIXED — with `REEL_REQUIRE_SOURCE=1` the `source_video` fixture fails instead of skipping (verified by simulating a missing ffmpeg: 2 skips without the variable, 2 errors with it); more than one recording under `transfer-*/` fails with a message naming them. README documents the variable. `CLAUDE.md` was not edited: adding the variable to its pre-commit line is the user's call.
 
 ### F6 — What the current shape means for a move to piped frames in S-02
 

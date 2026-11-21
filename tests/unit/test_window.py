@@ -45,6 +45,9 @@ def test_parsing_is_exact_not_floating_point() -> None:
         "10 -20",
         "1e3-2e3",
         "1:2:3:4-5",
+        "1:5-1:9",
+        "1:5:00-2:00:00",
+        "1:00:5-2:00:00",
     ],
 )
 def test_rejects_malformed_window_text(text: str) -> None:

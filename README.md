@@ -6,6 +6,10 @@ vertical 9:16 reel. See `context/foundation/` for shape notes, PRD and stack.
     uv sync
     uv run pytest
 
+The integration tests need ffmpeg and the recording under `transfer-*/` and skip without them.
+Where both are present, run `REEL_REQUIRE_SOURCE=1 uv run pytest` so that a missing input fails
+the run instead of skipping it.
+
 ## Usage
 
 Cut one window of a recording into a vertical 1080x1920 H.264 clip with the match audio:
