@@ -6,6 +6,8 @@
 - **Date**: 2026-11-21
 - **Verdict**: REVISE
 - **Findings**: 0 critical, 6 warnings, 3 observations
+- **Triage**: complete on 2026-11-21 — 9 fixed, 0 skipped, 0 accepted, 0 dismissed
+- **Verdict after fixes**: SOUND
 
 The plan is sound in approach and faithful to the research. Nothing in it has to be rethought.
 Six small gaps should be closed in the plan text before the implementation sessions start; each is
@@ -145,7 +147,7 @@ All arithmetic in the named unit cases was checked by hand (696; 706 and 716; 65
   - Tradeoff: the line stops making the claim the slice is about, and the CLI keeps the counting.
   - Confidence: MEDIUM — honest, but weaker as evidence for the slice.
   - Blind spot: None significant.
-- **Decision**: PENDING
+- **Decision**: FIXED via Fix A — `FollowCheck` and `check_follow` in `core/camera.py`; success line and error line count tracked frames only; tests, criterion 3.6 and the brief updated.
 
 ### F2 — `load_ball_track` runs two ijson reads on one stream, and the second fails without a rewind
 
@@ -165,7 +167,7 @@ All arithmetic in the named unit cases was checked by hand (696; 706 and 716; 65
   named case `test_load_ball_track_returns_the_window_track` asserting that
   `load_ball_track(path, FrameRange(19000, 500), Fraction(50))` returns 168 samples from 18 999 to
   19 500.
-- **Decision**: PENDING
+- **Decision**: FIXED — `load_ball_track` rewinds the stream between the two reads; `test_load_ball_track_returns_the_window_track` added to Phase 2.
 
 ### F3 — The interpolation arithmetic is not pinned, and 5 411 frames sit on a rounding tie
 
@@ -187,7 +189,7 @@ All arithmetic in the named unit cases was checked by hand (696; 706 and 716; 65
   the tie rule applies to that value as computed. Add a named unit case with an interpolated
   frame whose exact centre is an odd integer in thirds (for example samples at frames 0 and 3
   with x 1000.0 and 1003.0: frame 1 gives centre 1001, crop x 698).
-- **Decision**: PENDING
+- **Decision**: FIXED — `numpy.interp` in float64 named in step 1 of the rule; `test_interpolated_tie_rounds_upward` added.
 
 ### F4 — The even-and-in-range guarantee lives only inside the function S-03 replaces
 
@@ -221,7 +223,7 @@ All arithmetic in the named unit cases was checked by hand (696; 706 and 716; 65
   - Tradeoff: relies on the next plan reading this one; the silent off-by-one stays possible.
   - Confidence: MEDIUM — cheap now, and exactly the kind of loose boundary that returns in S-03.
   - Blind spot: None significant.
-- **Decision**: PENDING
+- **Decision**: FIXED via Fix A, with one change — `CropPath` refuses odd or negative x and unequal lengths on construction; the right-edge bound is refused by `check_follow` in the core (which receives the source width) instead of by `render_clip`, which does not know it.
 
 ### F5 — The fallback flag is undefined for a missing record, as opposed to a null ball
 
@@ -244,7 +246,7 @@ All arithmetic in the named unit cases was checked by hand (696; 706 and 716; 65
   without a ball); `test_gap_in_frame_idx_is_rejected` covers it. If tolerance is preferred
   instead, say so explicitly and add a core test showing that such frames are not counted as
   fallback.
-- **Decision**: PENDING
+- **Decision**: FIXED — reject: `read_metadata` replaces `read_video_fps` and returns fps and stride; a step different from the stride raises `TrackingError`; `test_gap_in_frame_idx_is_rejected` and `test_missing_stride_is_rejected` added.
 
 ### F6 — No test ties the real render command to the crop path
 
@@ -265,7 +267,7 @@ All arithmetic in the named unit cases was checked by hand (696; 706 and 716; 65
   filter text from the same `crop_filter` call. Together with the existing
   `test_seek_time_lands_on_requested_source_frame` this closes the chain without a lossy
   comparison of encoded frames.
-- **Decision**: PENDING
+- **Decision**: FIXED — `test_render_command_carries_the_crop_filter_of_the_path` added; the pixel test takes its filter text from `crop_filter`.
 
 ### F7 — The brief's "up to 1876 px in 25 s" joins two different runs
 
@@ -280,7 +282,7 @@ All arithmetic in the named unit cases was checked by hand (696; 706 and 716; 65
   both facts separately and correctly; only the brief merges them.
 - **Fix**: Replace with "up to 1876 px in 12.7 s (at most 7.7 px per output frame); the longest
   stretch, 25.7 s at the end of the recording, is held, not crossed."
-- **Decision**: PENDING
+- **Decision**: FIXED — brief corrected to 1876 px in 12.7 s; the 25.7 s run is held.
 
 ### F8 — No named way out when the expression outgrows the limit
 
@@ -299,7 +301,7 @@ All arithmetic in the named unit cases was checked by hand (696; 706 and 716; 65
 - **Fix**: Add one sentence after the limit: "If a later slice needs longer single renders, the
   same expression read from a file (`-/filter:v`) or `sendcmd` removes the limit without changing
   pixels (`research.md`, finding 5); neither is built here."
-- **Decision**: PENDING
+- **Decision**: FIXED — the measured limits and the two ways out are stated after the size limit.
 
 ### F9 — Small notes for the implementer
 
@@ -322,4 +324,4 @@ All arithmetic in the named unit cases was checked by hand (696; 706 and 716; 65
   no cost: for every frame between two neighbouring positioned samples, `path.x` lies between
   the two samples' own crop x values (inclusive).
 - **Fix**: Fold (a)–(d) into the Phase 1 and Phase 2 contracts as one line each.
-- **Decision**: PENDING
+- **Decision**: FIXED — (a) `eq=False` and read-only arrays, (b) core error renamed `CameraPathError`, (c) Desired End State names the success-line suffix, (d) between-sample assertion added to the whole-match test.

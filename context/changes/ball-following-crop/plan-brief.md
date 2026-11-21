@@ -21,9 +21,10 @@ same pixels as slicing frames in numpy.
 
 `uv run ai-reel-montage --input <recording> --tracking <tracks.json> --window 6:20-6:30 --output out/clip.mp4`
 writes a 1080x1920 clip of exactly 500 frames with the crop centred on the ball in every frame, as
-far as the picture edge allows. The command prints how many frames passed the ball-inside-crop
-check and how many were framed by the fallback. Two runs give the same bytes; without `--tracking`
-the command behaves exactly as in S-01.
+far as the picture edge allows. The command prints in how many of the frames with a recorded ball
+position around them the ball is inside the crop, and how many frames were framed by the fallback.
+Two runs give the same bytes; without `--tracking` the command renders exactly as in S-01 (its
+success line gains `, centre crop`).
 
 ## Key Decisions Made
 
@@ -38,7 +39,9 @@ the command behaves exactly as in S-01.
 | Tracking argument | optional `--tracking` | S-01 behaviour and tests stay; the centre clip remains for comparison. | Plan (user) |
 | Render route | flat-sum expression in `n` for the `crop` filter | One process and the S-01 command unchanged; the text is a pure function of the path. | Research / Plan (user) |
 | Crop resolution | even x, ties upward, clamped to 0–1312 | An odd x is silently rounded down by the filter. | Research |
-| Verification | check on every run and over the whole match in tests | "Ball inside the crop" is asserted by a command, not judged by eye. | Plan |
+| Verification | check on every run, over frames that are not fallback frames, and over the whole match in tests | "Ball inside the crop" is asserted by a command, not judged by eye, and never for a position the fallback assumed. | Plan / Review |
+| Gap in the records | a step between records different from `metadata.stride` is rejected | A missing record is a broken file, not a stretch without a ball. | Review |
+| Path guarantees | `CropPath` refuses an odd or negative x; the check refuses an x beyond the right edge | ffmpeg would round or clamp such a path silently, and S-03 replaces the function that produces it. | Review |
 
 ## Scope
 
@@ -64,7 +67,7 @@ the command behaves exactly as in S-01.
 cli.py  --window, probe, frame range, centre crop-->   as in S-01
         --read track-->   shell/tracking.py   load_ball_track -> BallTrack (frame numbers, x, NaN = no ball)
         --path-------->   core/camera.py      crop_path -> CropPath (even x per frame, fallback flags)
-        --check------->   core/camera.py      ball_centre, ball_inside -> counts; a failure renders nothing
+        --check------->   core/camera.py      ball_centre, check_follow -> tracked / inside / fallback; a failure renders nothing
         --render------>   shell/video.py      render_clip(path): crop=608:1080:x='<expression>':y=0
 ```
 
@@ -87,18 +90,20 @@ file and returns no ffmpeg arguments; the shell does no arithmetic on positions.
 
 - The check holds by construction for a centred, clamped crop. It guards frame mapping, clamp and
   rounding; it does not show that the recorded positions are right (research finding 2 does).
-- In a long stretch without a ball the crop travels across the pitch on an assumed line, up to
-  1876 px in 25 s. The clip is produced and the fallback frames are counted, but what they show is
-  not verified.
+- In a stretch without a ball the crop travels across the pitch on an assumed line, up to 1876 px
+  in 12.7 s (at most 7.7 px per output frame); the longest stretch, 25.7 s at the end of the
+  recording, is held, not crossed. The clip is produced and the fallback frames are counted
+  separately from the check, but what they show is not verified.
 - Whether the `crop` filter can change size per frame was not measured; S-04 must measure it, and
   a move to pipes would change container bytes once.
-- The expression is limited to 100 000 characters, about three minutes of footage.
+- The expression is limited to 100 000 characters, about three minutes of footage per render;
+  reading it from a file or `sendcmd` lifts the limit without changing pixels, if ever needed.
 - The path is raw and will look jittery; that is S-03's subject, not a defect here.
 - Only this one tracking file has been seen; a cold-cache read was not measured.
 
 ## Success Criteria (Summary)
 
 - One command with `--tracking` produces a vertical clip in which the ball stays in the picture,
-  and says so itself: `ball inside crop in 500/500 frames`.
+  and says so itself: `ball inside crop in 500/500 tracked frames`.
 - Over the whole match, every one of the 94 415 recorded ball positions lies inside the crop.
 - A second run gives the same file, and a run without `--tracking` is unchanged from S-01.
