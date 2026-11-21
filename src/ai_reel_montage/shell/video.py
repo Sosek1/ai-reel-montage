@@ -1,11 +1,13 @@
 """ffprobe and ffmpeg behind two typed functions.
 
 ffmpeg exits 0 on a window it cannot honour, so ``render_clip`` renders to ``<output>.partial``,
-counts the frames of the result itself and only then renames it over the output. Both tools get
+counts the frames of the result itself and only then renames it over the output. The source may be
+neither the output nor that temporary file: both are written or removed here. Both tools get
 argument lists, never a shell string: the recording's file name holds spaces, brackets and
 non-ASCII characters.
 """
 
+import contextlib
 import json
 import subprocess
 from dataclasses import dataclass
@@ -107,11 +109,20 @@ def _count_frames(path: Path) -> int:
     return int(value)
 
 
+def partial_path(output: Path) -> Path:
+    """The temporary file ``render_clip`` writes before renaming it over ``output``."""
+    return output.with_name(output.name + ".partial")
+
+
 def render_clip(
     source: Path, frames: FrameRange, fps: Fraction, crop: CropBox, output: Path
 ) -> None:
     """Render ``frames`` of ``source`` as a 1080x1920 clip at ``output``, atomically."""
-    partial = output.with_name(output.name + ".partial")
+    partial = partial_path(output)
+    # Checked before anything is created: the output is renamed over and the partial file is
+    # removed on failure, so a source in either place would be destroyed.
+    if source.resolve() in (output.resolve(), partial.resolve()):
+        raise VideoError(f"refusing to render: {source} is the output or its temporary file")
     command = [
         "ffmpeg",
         "-nostdin",
@@ -152,6 +163,7 @@ def render_clip(
         "mp4",
         str(partial),
     ]
+    published = False
     try:
         output.parent.mkdir(parents=True, exist_ok=True)
         _run(command)
@@ -162,8 +174,11 @@ def render_clip(
                 f" (start frame {frames.start_frame})"
             )
         partial.replace(output)
-    except BaseException as exc:
-        partial.unlink(missing_ok=True)
-        if isinstance(exc, (VideoError, KeyboardInterrupt)):
-            raise
+        published = True
+    except OSError as exc:
         raise VideoError(f"render failed: {exc}") from exc
+    finally:
+        if not published:
+            # Clean-up must not replace the error being reported.
+            with contextlib.suppress(OSError):
+                partial.unlink(missing_ok=True)

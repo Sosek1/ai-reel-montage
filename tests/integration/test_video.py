@@ -122,3 +122,22 @@ def test_failed_render_leaves_no_file(source_video: Path, tmp_path: Path) -> Non
         render_clip(source_video, beyond, info.fps, centre_crop(info.width, info.height), out)
     assert not out.exists()
     assert not out.with_name("clip.mp4.partial").exists()
+
+
+def test_source_named_as_the_partial_file_survives(tmp_path: Path) -> None:
+    source = tmp_path / "clip.mp4.partial"
+    source.write_bytes(b"RECORDING")
+    with pytest.raises(VideoError, match="refusing to render"):
+        render_clip(source, FrameRange(0, 10), FPS, centre_crop(1920, 1080), tmp_path / "clip.mp4")
+    assert source.read_bytes() == b"RECORDING"
+    assert not (tmp_path / "clip.mp4").exists()
+
+
+def test_output_under_a_regular_file_raises_video_error(source_video: Path, tmp_path: Path) -> None:
+    blocker = tmp_path / "afile"
+    blocker.write_text("x")
+    with pytest.raises(VideoError, match="render failed"):
+        render_clip(
+            source_video, FrameRange(0, 10), FPS, centre_crop(1920, 1080), blocker / "clip.mp4"
+        )
+    assert blocker.read_text() == "x"

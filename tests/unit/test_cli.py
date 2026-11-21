@@ -118,3 +118,13 @@ def test_output_equal_to_input_exits_2_and_does_not_render(
     assert main(["--input", "in.mp4", "--window", "10-20", "--output", "./in.mp4"]) == 2
     assert capsys.readouterr().err == "error: output would overwrite the input\n"
     assert shell.probed == [] and shell.rendered == []
+
+
+def test_input_named_as_the_partial_file_exits_2_and_does_not_render(
+    shell: Shell, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # render_clip writes and removes <output>.partial; an input with that name would be destroyed.
+    argv = ["--input", "out/clip.mp4.partial", "--window", "10-20", "--output", "out/clip.mp4"]
+    assert main(argv) == 2
+    assert capsys.readouterr().err.startswith("error: ")
+    assert shell.probed == [] and shell.rendered == []

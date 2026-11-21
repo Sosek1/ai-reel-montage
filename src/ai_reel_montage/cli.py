@@ -16,7 +16,7 @@ from pathlib import Path
 
 from ai_reel_montage.core.framing import FramingError, centre_crop
 from ai_reel_montage.core.window import WindowError, parse_window, to_frame_range
-from ai_reel_montage.shell.video import VideoError, probe_source, render_clip
+from ai_reel_montage.shell.video import VideoError, partial_path, probe_source, render_clip
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -76,6 +76,8 @@ def _run(source: Path, window_text: str, output: Path) -> int:
         return _fail(f"input file not found: {source}", 2)
     if output.resolve() == source.resolve():
         return _fail("output would overwrite the input", 2)
+    if partial_path(output).resolve() == source.resolve():
+        return _fail("the output's temporary file would overwrite the input", 2)
 
     try:
         info = probe_source(source)

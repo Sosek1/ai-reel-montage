@@ -5,7 +5,7 @@
 - **Scope**: Full plan
 - **Reviewed phases**: 1, 2, 3
 - **Date**: 2026-11-21
-- **Verdict**: NEEDS ATTENTION
+- **Verdict**: NEEDS ATTENTION (both warnings F1 and F2 fixed in triage, 2026-11-21; F3–F6 pending)
 - **Findings**: 0 critical, 2 warnings, 4 observations
 
 Reviewed commits: `b65638f` (phase 1), `2eff593` (phase 2), `0d07d52` (phase 3). The review read
@@ -104,7 +104,7 @@ on the user's word.
 - **Location**: src/ai_reel_montage/shell/video.py:114, src/ai_reel_montage/shell/video.py:166, src/ai_reel_montage/cli.py:77
 - **Detail**: The overwrite guard compares the input with the output, but the file `render_clip` actually writes and deletes is `<output>.partial`. Reproduced on a synthetic clip: `--input x.mp4.partial --output x.mp4` → ffmpeg refuses (`Output … same as Input #0 - exiting`), the `except` branch runs `partial.unlink()`, and the input no longer exists; exit code 1. The trigger needs an unusual file name, which is why this is not rated critical, but the loss is the same one the guard exists to prevent: the recording is git-ignored and has no local copy. The guard also lives only in `cli.py`, while `render_clip` is the function S-05 will call once per window.
 - **Fix**: At the top of `render_clip`, before anything is created, raise `VideoError` when `source.resolve()` equals `output.resolve()` or `partial.resolve()`. Keep the CLI check (it gives exit 2 for the common case) and extend it to the partial path. Add an integration-free unit test for the CLI branch and one test of `render_clip` with a throwaway file as "source".
-- **Decision**: PENDING
+- **Decision**: FIXED — guard at the top of `render_clip` (source may be neither the output nor `<output>.partial`), CLI check extended to the partial path (exit 2); tests in `tests/unit/test_render_guard.py`, `tests/unit/test_cli.py` and `tests/integration/test_video.py`. Reproduction replayed: exit 2, input intact.
 
 ### F2 — Clean-up after a failure can raise and escape as a traceback
 
@@ -114,7 +114,7 @@ on the user's word.
 - **Location**: src/ai_reel_montage/shell/video.py:165
 - **Detail**: The contract says that on any failure `render_clip` raises `VideoError`. `partial.unlink(missing_ok=True)` runs inside the `except` block unprotected; `missing_ok` covers only `FileNotFoundError`. Reproduced: `--output <regular file>/clip.mp4` → `mkdir` fails, then `unlink` raises `NotADirectoryError`, which leaves `main` as an uncaught traceback instead of `error: …` with exit 1. A permission error on the unlink does the same. Separately, the block catches `BaseException` and rewraps everything except `VideoError` and `KeyboardInterrupt` as `VideoError`, so a `SystemExit` or `MemoryError` would be reported as "render failed".
 - **Fix**: Suppress `OSError` around the unlink (`contextlib.suppress(OSError)`), and split the handler: `except OSError` → `VideoError`; clean-up for everything else in a `finally` guarded by a "published" flag, re-raising unchanged. Add a unit-level case for the output-under-a-file path.
-- **Decision**: PENDING
+- **Decision**: FIXED — `except OSError` → `VideoError`, clean-up moved to `finally` behind a `published` flag with `OSError` suppressed; other exceptions propagate unchanged. Test `test_output_under_a_regular_file_raises_video_error`. Reproduction replayed: `error: render failed: …`, exit 1.
 
 ### F3 — The error-path guarantees of `render_clip` are only partly tested
 
