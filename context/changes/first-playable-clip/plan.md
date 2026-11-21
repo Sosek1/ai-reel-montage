@@ -144,8 +144,10 @@ shorten.
 - `to_frame_range(window: Window, fps: Fraction, total_frames: int) -> FrameRange`. Each boundary
   maps to `floor(seconds * fps + 1/2)` (nearest frame, ties upward). Raises `WindowError` when the
   rounded range has fewer than 1 frame, when `start_frame >= total_frames`, or when
-  `start_frame + n_frames > total_frames`. The out-of-range message states the window as written
-  and the recording length in seconds.
+  `start_frame + n_frames > total_frames`. The out-of-range message states the window boundaries
+  in seconds and the recording length in seconds, both formatted from the exact values (for
+  example `window 5945-5955 s is outside the recording (5949.38 s)`). `Window` does not carry the
+  caller's text.
 - `seek_time(start_frame: int, fps: Fraction) -> str` and
   `duration_time(n_frames: int, fps: Fraction) -> str` — decimal strings with six fractional
   digits for the ffmpeg command line, rounded down (see Critical Implementation Details).
@@ -283,6 +285,10 @@ that the engine's checks hold. Every render is a 2 s window; all tests carry
 - `test_off_grid_start_still_gives_exact_frame_count` — window `604.785-606.785` gives 100 frames.
 - `test_two_renders_are_byte_identical` — same window rendered to two paths, equal SHA-256.
 - `test_last_frames_of_recording_render` — window `5947.38-5949.38` gives 100 frames.
+- `test_seek_time_lands_on_requested_source_frame` — one frame decoded with
+  `ffmpeg -ss <seek_time(30239, 50)> -i <source> -map 0:v:0 -frames:v 1 -copyts -f framecrc -`
+  reports pts 30239 (measured in plan review). This pins the start frame itself, which the
+  frame-count tests do not.
 - `test_failed_render_leaves_no_file` — a `FrameRange` reaching past the last frame, passed
   straight to `render_clip` (bypassing core validation), raises `VideoError`; neither the output
   nor the `.partial` file exists afterwards.
@@ -296,7 +302,9 @@ that the engine's checks hold. Every render is a 2 s window; all tests carry
 - Type checking passes: `uv run mypy`
 - Linting passes: `uv run ruff check`
 - Formatting is clean: `uv run ruff format --check src tests`
-- `core/` does not import `shell`: `! grep -rn "shell" src/ai_reel_montage/core`
+- `core/` does not import `shell` or `cli`:
+  `! grep -rnE --include='*.py' "^\s*(import|from) .*\b(shell|cli)\b" src/ai_reel_montage/core`
+  (import lines only — the word "shell" in a docstring must not fail the check)
 
 #### Manual Verification:
 
@@ -330,12 +338,24 @@ render. The CLI holds no montage logic; it converts exceptions into messages and
 - New arguments: `--input PATH`, `--window A-B`, `--output PATH`. `--version` and the no-argument
   help behaviour stay as they are. When any of the three is given, all three are required.
   `--window` given more than once is a usage error.
-- Exit codes: `0` on success; `2` for missing or conflicting arguments, an input path that does
-  not exist, `WindowError` and `FramingError`; `1` for `VideoError`.
-- Errors go to stderr as one line starting `error: `. Success prints one line to stdout naming the
-  output path, the frame count and the clip length in seconds.
-- `cli.py` refers to `probe_source` and `render_clip` through module-level names so unit tests
-  can replace them; the unit tier never starts a subprocess.
+- Two kinds of error, kept apart (decided in plan review):
+  - **Usage errors** — a missing argument, an unknown argument, a repeated `--window` — keep
+    argparse's own behaviour: `parser.error`, which prints the usage line and
+    `ai-reel-montage: error: …` to stderr and raises `SystemExit(2)`. No parser subclass.
+    `--window` is declared with `action="append"`, because argparse otherwise accepts a repeat
+    and silently keeps the last value; more than one value calls `parser.error`.
+  - **Engine errors** are returned by `main`, with one stderr line starting `error: `: `2` for an
+    input path that does not exist, an output path that is the same file as the input,
+    `WindowError` and `FramingError`; `1` for `VideoError`.
+- Exit code `0` on success, with one line on stdout naming the output path, the frame count and
+  the clip length in seconds.
+- The output path is compared with the input path, both resolved, before the probe. When they
+  are the same file the run stops with `error: output would overwrite the input` and exit code 2:
+  `render_clip` renames over the output, so without this check the recording itself would be
+  replaced by the clip.
+- `cli.py` refers to `probe_source`, `render_clip` and the input-existence check through
+  module-level names so unit tests can replace them; the unit tier never starts a subprocess and
+  never needs a real file.
 
 #### 2. CLI unit tests
 
@@ -351,8 +371,12 @@ replaced by fakes.
   `FrameRange(30239, 500)` and `CropBox(608, 1080, 656, 0)` and returns 0.
 - `test_window_past_end_exits_2_and_does_not_render` — `--window 5945-5955`; stderr names the
   window and the recording length; the fake render is not called.
-- `test_malformed_window_exits_2`, `test_missing_argument_exits_2`,
-  `test_second_window_exits_2`, `test_render_failure_exits_1`.
+- `test_malformed_window_exits_2`, `test_render_failure_exits_1` — returned codes.
+- `test_missing_argument_exits_2`, `test_second_window_exits_2` — usage errors, asserted as
+  `SystemExit` with code 2.
+- `test_missing_input_exits_2_and_does_not_probe` — the existence check replaced by a fake
+  reporting the file absent.
+- `test_output_equal_to_input_exits_2_and_does_not_render`.
 - The existing `test_version_flag_exits_zero` stays.
 
 #### 3. End-to-end integration test
