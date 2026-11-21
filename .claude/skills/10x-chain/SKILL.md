@@ -73,9 +73,21 @@ Before ending any session:
 2. `git add` it, commit with a message naming the step, push to `origin main`.
 3. Tell the user the step is done, name the next step and its model, and stop. Do not start it.
 
-## Open risk carried from shaping
+## State as of 2026-11-21
 
-The source materials arriving in `transfer-01-a1f923` are a full match, not pre-cut clips. If
-cutting turns out to be in scope, the load-bearing non-goal ("no player detection and no match
-cutting") falls and the project is no longer a one-week build. Any step that reads the materials
-for the first time must check this against `context/foundation/shape-notes.md` and say so.
+`/10x-shape` is closed. Part one delivered real materials (`transfer-01a1f923/`, git-ignored): a
+99-minute match plus 398 MB of per-frame tracking. Shape-notes were corrected against them —
+read `context/foundation/shape-notes.md`, sections `## Source materials` and `## Open Questions`,
+before any step that touches the data.
+
+What changed from the original shaping, and matters downstream:
+
+- Trimming named timestamp windows out of the full match is **in** scope. Video analysis is not.
+- The user names the moments; the engine never searches for them.
+- The contract carries ball position over time plus player positions and identities. The
+  attractiveness score and action type were removed — nothing produces them.
+- Three data-quality issues are live and belong to `/10x-research`: fragmented player identities,
+  jersey OCR reading numbers absent from both squads, and ~26% of ball positions predicted
+  rather than detected.
+
+Next step: `/10x-prd` on Sonnet, in its own session.
