@@ -103,4 +103,15 @@ blocked until the video path is implemented, but any step that would exercise it
 fixed set of clip bundles, and no timestamp windows have been named. `/10x-implement` cannot be
 judged until the user picks 3–5 moments from the 99-minute match.
 
-Next step: `/10x-roadmap` on Sonnet, in its own session.
+`/10x-roadmap` is complete. Milestone **M-1 `first-watchable-reel`** is open with six slices
+(S-01 … S-06) in `context/foundation/roadmap.md`. S-01 `first-playable-clip` is `ready`; the rest
+wait on prerequisites.
+
+**Every slice runs the full chain** — new, research, plan, plan-review, implement, impl-review,
+archive — with no light path and no skipped steps. The user decided this explicitly on
+2026-11-21 after being shown the session cost. Do not propose trimming it again.
+
+**The evaluation set is still unnamed** and is a formal prerequisite of S-03, S-05 and S-06. Only
+S-01 and S-02 can be planned until the user names 3–5 timestamp windows from the match.
+
+Next step: `/10x-new first-playable-clip` on Sonnet, in its own session.
