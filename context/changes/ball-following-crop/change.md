@@ -1,7 +1,7 @@
 ---
 change_id: ball-following-crop
 title: Ball-following crop
-status: preparing
+status: planned
 created: 2026-11-21
 updated: 2026-11-21
 archived_at: null
