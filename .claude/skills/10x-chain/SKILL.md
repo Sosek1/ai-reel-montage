@@ -26,7 +26,6 @@ Steps marked **done** are complete; their artifacts are in the repository.
 | 1 | `/10x-prd` | Sonnet | `context/foundation/prd.md` |
 | 2 | `/10x-tech-stack-selector` | Sonnet | `context/foundation/tech-stack.md` |
 | 3 | `/10x-bootstrapper` | Sonnet | scaffolded project + verification log |
-| 4 | `/10x-agents-md` | Sonnet | `AGENTS.md` |
 | 5 | `/10x-roadmap` | Sonnet | `context/foundation/roadmap.md` |
 | | — then, per roadmap slice — | | |
 | 6 | `/10x-new` | Sonnet | `context/changes/<change-id>/change.md` |
@@ -38,6 +37,10 @@ Steps marked **done** are complete; their artifacts are in the repository.
 | 12 | `/10x-archive` | Sonnet | change folder moved to `context/archive/` |
 
 Steps 6–12 repeat per slice. Steps 1–5 run once.
+
+`/10x-agents-md` was deliberately skipped (2026-11-21). `CLAUDE.md` already carries the session
+protocol *and* the stack conventions, so `AGENTS.md` would duplicate it and the two would drift.
+Reconsider only if agents other than Claude Code start working in this repository.
 
 ## Which plan phases go through TDD
 
@@ -90,4 +93,14 @@ What changed from the original shaping, and matters downstream:
   jersey OCR reading numbers absent from both squads, and ~26% of ball positions predicted
   rather than detected.
 
-Next step: `/10x-prd` on Sonnet, in its own session.
+`/10x-shape`, `/10x-prd`, `/10x-tech-stack-selector` and `/10x-bootstrapper` are complete. The
+project scaffolds and `uv run pytest`, `uv run mypy src` and `uv run ruff check .` all pass.
+
+**`ffmpeg` is not installed on this machine** (needs sudo: `sudo apt install ffmpeg`). Nothing is
+blocked until the video path is implemented, but any step that would exercise it must check first.
+
+**There is no evaluation set yet.** The Primary success criterion is a human judging reels on a
+fixed set of clip bundles, and no timestamp windows have been named. `/10x-implement` cannot be
+judged until the user picks 3–5 moments from the 99-minute match.
+
+Next step: `/10x-roadmap` on Sonnet, in its own session.
