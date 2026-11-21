@@ -514,15 +514,15 @@ None. No data, no prior behaviour to preserve beyond `--version`.
 
 #### Automated
 
-- [x] 3.1 Full test suite passes: `uv run pytest`
-- [x] 3.2 Type checking passes: `uv run mypy`
-- [x] 3.3 Linting passes: `uv run ruff check`
-- [x] 3.4 Formatting is clean: `uv run ruff format --check src tests`
-- [x] 3.5 Help lists the new arguments
+- [x] 3.1 Full test suite passes: `uv run pytest` — 0d07d52
+- [x] 3.2 Type checking passes: `uv run mypy` — 0d07d52
+- [x] 3.3 Linting passes: `uv run ruff check` — 0d07d52
+- [x] 3.4 Formatting is clean: `uv run ruff format --check src tests` — 0d07d52
+- [x] 3.5 Help lists the new arguments — 0d07d52
 
 #### Manual
 
-- [x] 3.6 A 10 s clip renders in under 30 s on this machine
-- [x] 3.7 The clip plays in a desktop video player: vertical, no black bars, not stretched, audio in sync, length 10 s
-- [x] 3.8 A second run gives the same `sha256sum`
-- [x] 3.9 `--window 5945-5955` prints an error, exits with status 2 and writes no file
+- [x] 3.6 A 10 s clip renders in under 30 s on this machine — 0d07d52
+- [x] 3.7 The clip plays in a desktop video player: vertical, no black bars, not stretched, audio in sync, length 10 s — 0d07d52
+- [x] 3.8 A second run gives the same `sha256sum` — 0d07d52
+- [x] 3.9 `--window 5945-5955` prints an error, exits with status 2 and writes no file — 0d07d52
