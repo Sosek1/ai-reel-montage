@@ -2,7 +2,7 @@
 project: "AI Reel Montage"
 context_type: greenfield
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-21
 checkpoint:
   current_phase: 8
   phases_completed: [1, 2, 3, 4, 5, 6, 7]
@@ -26,7 +26,11 @@ checkpoint:
     - topic: "framing data source"
       decision: "trust the upstream framing target; no detection in this repo"
     - topic: "part-one dependency"
-      decision: "accepted as a blocker — v1 starts when part one delivers; contract handed over now, marked v0"
+      decision: "lifted 2026-11-21 — real tracking data arrived; see '## Source materials'"
+    - topic: "window selection"
+      decision: "manual — the user names timestamps; the engine does not pick moments"
+    - topic: "contract narrowing"
+      decision: "attractiveness score and action type removed — no producer exists in the delivered data"
     - topic: "clip selection"
       decision: "dropped from the engine — the caller supplies exactly the clips that go in"
     - topic: "clip ordering"
@@ -35,7 +39,7 @@ checkpoint:
       decision: "the play (action + ball), not the target player; guardrail rewritten accordingly"
     - topic: "output duration"
       decision: "follows the supplied material; no fixed target window"
-  frs_drafted: 6
+  frs_drafted: 7
   quality_check_status: accepted
 prd_frontmatter:
   product_type: cli
@@ -55,8 +59,10 @@ prd_frontmatter:
 
 This repository implements **part two** of a two-part product: the montage engine.
 
-- **Part one (out of scope here):** upload a full match recording, analyse it, identify the target player, cut labelled fragments. Not built here — only simulated via an agreed metadata format.
-- **Part two (this repo):** given several short clips plus per-clip metadata, produce a finished vertical reel.
+- **Part one (out of scope here):** analyse a full match recording, detect and track players and ball, identify players by jersey. Not built here. **As of 2026-11-21 this exists and has produced real output** — see `## Source materials`.
+- **Part two (this repo):** given a match recording, its tracking data, and timestamps naming the moments to use, produce a finished vertical reel.
+
+Revised 2026-11-21: the original split assumed part one would hand over pre-cut clips. It hands over a full match plus dense tracking instead, so trimming to the named windows happens here. Trimming is not analysis — the vision work stays upstream.
 
 ## Vision & Problem Statement
 
@@ -94,13 +100,14 @@ No authentication. The engine runs locally as a tool/library invoked by its call
 
 ### MVP flow (locked)
 
-1. Caller supplies 3–5 clips (a few seconds each) plus metadata describing each clip.
-2. Engine orders them chronologically by match time.
-3. Engine crops each clip from 16:9 to 9:16, following the play.
-4. Engine concatenates them with hard cuts.
-5. Engine writes one vertical file whose length follows the material.
+1. Caller supplies the match recording, its tracking data, and 3–5 timestamp windows naming the moments to use.
+2. Engine trims each named window out of the recording.
+3. Engine orders the windows chronologically by match time.
+4. Engine crops each one from 16:9 to 9:16, following the play.
+5. Engine concatenates them with hard cuts.
+6. Engine writes one vertical file whose length follows the material.
 
-(Steps 2, 3 and 5 were rewritten in Phase 4.5 — see the Socrates notes under the FRs.)
+(Steps 3, 4 and 6 were rewritten in Phase 4.5; steps 1 and 2 in the 2026-11-21 correction, once it turned out that nobody hands over pre-cut clips.)
 
 Scope decision: music, beat-synced cuts, metadata overlays and slow-motion/zoom-punch were all considered and cut from v1 — see `## Non-Goals`. Beat-sync was cut because it inverts control over clip lengths and rebuilds the montage core rather than adding to it; slow-motion was cut because it depends on key-frame timestamps that part one does not yet produce.
 
@@ -108,15 +115,19 @@ Scope decision: music, beat-synced cuts, metadata overlays and slow-motion/zoom-
 
 ### Input contract
 
-- FR-001: Caller can supply a bundle of short clips, each accompanied by a metadata record whose only required field is a per-clip framing target — the position of the play (the action and the ball) within the frame over time. Action type, attractiveness score and match context are optional fields carried through the contract but unused in v1. Priority: must-have
-  > Socrates: Counter-argument accepted — "four required fields is too much for v1". Resolution: only the framing target is required. The chain that followed: dropping engine-side selection (FR-003) and dramaturgical ordering (FR-004) left the attractiveness score with no consumer in v1, so it joins action type and match context as carried-but-unused. They stay in the contract so the format does not have to change when overlays, selection and beat-sync land.
-- FR-002: Engine can degrade gracefully when optional metadata is missing, applying a documented fallback rather than refusing the bundle; it rejects only when it cannot produce a reel at all. Priority: must-have
+- FR-001: Caller can supply the match recording, its tracking data, and a list of timestamp windows naming the moments to use. The required content of the tracking data is the ball's position over time; player positions and identities are available and may inform the crop. Priority: must-have
+  > Socrates (Phase 4.5): Counter-argument accepted — "four required fields is too much for v1". Only the framing target was kept required.
+  > Correction (2026-11-21): the delivered data settled the rest by fact. The attractiveness score and action type were removed from the contract entirely — nothing produces them, and keeping fields no producer fills is wishful schema design. Match context exists in the tracking file's own metadata block and needs no separate field. The framing target turned out to be dense (16.67 fps effective), so the sparse-keypoint question is moot.
+- FR-001a: Caller can name timestamp windows by match time, and the engine trims exactly those windows out of the recording. Priority: must-have
+  > Added 2026-11-21. Nobody hands over pre-cut clips, so trimming moved in scope. Deliberately *not* paired with automatic moment-finding — see FR-003.
+- FR-002: Engine can degrade gracefully when tracking data is missing or predicted rather than detected, applying a documented fallback rather than refusing the window; it rejects only when it cannot produce a reel at all. Priority: must-have
   > Socrates: Counter-argument accepted — "better to degrade than reject". Rationale: during a one-week prototype the metadata is hand-written, and strict validation means fighting the schema instead of watching reels. An engine that always returns something is more useful than one that is fussy.
 
 ### Ordering
 
-- FR-003: ~~Engine selects which clips enter the reel.~~ **Dropped.** The caller supplies exactly the clips that go in.
-  > Socrates: Counter-argument accepted — "with 3–5 clips there is nothing to select". Selection also belongs upstream: part one already scores clips, so it should hand over a chosen pool. An editor receives chosen material; he does not pick it himself. Revisit if the engine is ever fed a larger pool.
+- FR-003: ~~Engine selects which moments enter the reel.~~ **Still dropped, for a new reason.** The user names the timestamp windows by hand.
+  > Socrates (Phase 4.5): Counter-argument accepted — "with 3–5 clips there is nothing to select", and selection belongs upstream.
+  > Correction (2026-11-21): the original reasoning collapsed — nobody supplies a chosen pool, and there are 99 minutes to choose from. The decision survives on different grounds: picking moments automatically would mean scoring player involvement from the tracking data, which means first solving identity fragmentation, which is a second module. The user names timestamps instead. Automate this only once the camera path works.
 - FR-004: Engine can order the clips chronologically by match time. Priority: must-have
   > Socrates: Counter-argument accepted — "chronological order is enough and more honest". A match reel read in order has a natural narrative, and reshuffling for drama falsifies how the match went. Dramaturgical reordering mainly pays off alongside a soundtrack and pacing, so it moves to v2.
 
@@ -133,17 +144,17 @@ Scope decision: music, beat-synced cuts, metadata overlays and slow-motion/zoom-
 
 ### US-01: Engine turns a labelled clip bundle into a vertical reel
 
-- **Given** a bundle of several short clips, each with a metadata record carrying at least a framing target
-- **When** the caller invokes the montage engine on that bundle
-- **Then** a single vertical video file is written, containing every supplied clip reframed to 9:16, ordered by match time and joined with hard cuts
+- **Given** a match recording, its tracking data, and 3–5 named timestamp windows
+- **When** the caller invokes the montage engine on them
+- **Then** a single vertical video file is written, containing every named window trimmed out, reframed to 9:16, ordered by match time and joined with hard cuts
 
 #### Acceptance Criteria
 
 - The output is a single file in 9:16 throughout, with no letterboxing or pillarboxing
-- Every supplied clip appears in the output, in chronological order by match time
+- Every named window appears in the output, trimmed to its boundaries, in chronological order by match time
 - The play — the action and the ball — is in frame for the whole of every clip
 - Re-running on the same bundle produces the same output
-- A record missing an optional field yields a reel built on the documented fallback, not an error
+- A window whose ball track is partly predicted rather than detected still yields a reel, built on the documented fallback, not an error
 
 ## Business Logic
 
@@ -153,7 +164,9 @@ The rule consumes one input the caller supplies: where the action sits in each c
 
 Two variables, not one: the path (where the frame sits) and the zoom (how wide it is). The zoom is what distinguishes this from a mechanical crop-follow — it is the part that imitates an editor's judgement about when to breathe and when to tighten.
 
-After the Phase 4.5 revisions this is the **only** decision the engine makes. Clip selection belongs to the caller and ordering is chronological, so the entire value of v1 sits in this rule. That concentration is a risk worth naming: if the camera path is mediocre, nothing else in the pipeline can compensate.
+After the Phase 4.5 revisions this is the **only** decision the engine makes. Moment selection belongs to the user, trimming is mechanical and ordering is chronological, so the entire value of v1 sits in this rule. That concentration is a risk worth naming: if the camera path is mediocre, nothing else in the pipeline can compensate.
+
+Correction (2026-11-21): the rule now has a measured input rather than an assumed one. It consumes a ball track that is 95.2% covered but only 73.9% directly detected — so roughly a quarter of the path is built on predictions. Whether the rule can tell the difference, and whether it should, is Open Question 5.
 
 ## Non-Functional Requirements
 
@@ -164,7 +177,9 @@ After the Phase 4.5 revisions this is the **only** decision the engine makes. Cl
 
 ## Non-Goals
 
-- **No player detection and no match cutting.** The whole of part one is outside this repository's surface — clips and metadata are assumed to arrive from elsewhere. This is the load-bearing non-goal: it is what keeps the project to one week instead of one quarter.
+- **No video analysis: no detection, no tracking, no player identification.** All of it belongs to part one and all of it is already done. This is the load-bearing non-goal — it is what keeps the project to one week instead of one quarter.
+  Narrowed 2026-11-21: the non-goal originally also covered "no match cutting". It no longer can, because what arrives is a full match rather than clips. Trimming named windows out of a recording stays in scope; *finding* those windows does not.
+- **No automatic moment-finding.** The engine does not decide which parts of a match are worth showing. The user names timestamps. Scoring player involvement would require resolving identity fragmentation across 186 tracked entities — a second module, not a feature.
 - **No soundtrack and no beat-synced cutting.** No music, no beat detection, no fitting clip lengths to a rhythm grid. Cut deliberately in Phase 3 because beat-sync inverts control over clip lengths and rebuilds the montage core rather than adding to it.
 - **No on-screen text or graphics.** Player name, minute and score travel in the metadata but nothing is rendered from them. The fields exist so the contract does not have to change when overlays land.
 
@@ -176,30 +191,39 @@ Not part of the PRD — captured for the stack-selection step that runs after `/
 - Both AI models and deterministic video tooling are acceptable means. No preference was expressed, and none should be assumed.
 - Render speed target: a reel in minutes, not hours, so the change-and-watch loop stays usable.
 
-## Critical-path dependency on part one
+## Source materials
 
-**v1 cannot start, and cannot be evaluated, until part one produces framing-target data.** This is a blocker, not an open question.
+Delivered 2026-11-21 in `transfer-01a1f923/` (3 GB, git-ignored — inputs, not artifacts).
 
-After the Phase 4.5 revisions the engine makes exactly one decision — the camera path and zoom over time (see `## Business Logic`). That decision consumes the framing target and nothing else. There is therefore no subset of v1 that can be built or judged without it: no evaluation set, no camera-path rule, no way to tell whether a montage change helped.
+| File | What it is |
+|---|---|
+| `...[RQ_gduINxnw].mp4` | Full match, 99.16 min, 50 fps, 1920x1080 |
+| `full_match_tracks.json` | 398 MB of per-frame tracking |
+| `match_tracking_report.md` | Human-readable summary of the tracking run |
+| 4 x `..._tracked_frame_*.jpg` | Annotated frames — visual proof of tracking |
 
-Two unblocking routes were considered and rejected:
+Tracking quality as reported: ball tracked in **95.2%** of frames (73.9% directly detected, the rest filled by a Viterbi solver), 186 persistent entities merged from 9,645 raw tracklets, 60 jersey OCR reads mapped against the squad lists. Processed at stride 3 over 50 fps source, so the effective sampling rate is **16.67 fps**.
 
-- **Hand-authoring the framing targets.** Rejected as unreasonable: manually pointing at where the player or the ball sits is not something a person should be doing per clip, and the exercise says nothing about whether the rule works on real upstream data.
-- **Running a throwaway detector to generate an evaluation set.** Rejected: it reintroduces the second model that was deliberately cut from scope, even framed as a test fixture.
+Per-frame shape:
 
-Accepted consequence: the one-week build window begins when part one delivers, not before. The schedule is serial.
+```json
+"frames": [{ "ball": {"x": 893.39, "y": 371.81, "bbox": null,
+                      "confidence": null, "source": "predicted"},
+             "players": [{"player_id": "TEAM_1_#23", "team": "team_1",
+                          "jersey_number": "23", "bbox": [...],
+                          "center_xy": [1215.5, 454.38], "foot_xy": [...],
+                          "player_name": "Rafał Wolszczyński"}] }]
+```
 
-### Handoff to part one
+**The Phase 4.5 blocker is lifted.** Shape-notes previously recorded that v1 could not start or be evaluated until part one delivered framing-target data. It has. The schedule is no longer serial.
 
-Since part one now sits on the critical path, the contract goes to its owner as soon as possible rather than after research. Sending it also settles Open Question 1 — the engine trusts the upstream framing target rather than detecting the action itself.
+### Known data-quality issues
 
-What part one is being asked for:
+These are not blockers but they shape the research step, and none of them is visible from the report's headline numbers:
 
-1. Short clips cut from a real match, 16:9, a few seconds each — enough for one reel.
-2. Per clip, a framing target: where the play (the action and the ball) sits in the frame over time.
-3. Optionally, and unused in v1: action type, an attractiveness score, match context.
-
-Marked **v0** — provisional. The required field is stable because it follows directly from FR-005; the optional fields may still change or disappear.
+- **Identity fragmentation.** One player appears under several persistent IDs — `TEAM_0_#21`, `TEAM_0_#21_07` and `TEAM_0_#21_43` are all Patryk Bednarczyk. 186 entities cover roughly 30 players. Selecting "our player" is not a single filter.
+- **Jersey OCR produces numbers absent from both squads** (#29, #92, #47, #31, #27 among them), so a jersey read is evidence, not identity.
+- **Roughly 26% of ball positions are predicted rather than detected** (`"source": "predicted"`). For a camera path this may be the difference between a smooth move and a drift, and it is worth measuring before trusting the track blindly.
 
 ## Quality cross-check
 
@@ -209,9 +233,11 @@ One contract-level inconsistency was surfaced during the check and resolved on t
 
 ## Open Questions
 
-1. ~~**Does the crop trust the upstream framing target, or detect the action itself?**~~ **Resolved:** the engine trusts the upstream framing target. Detecting the action here would reintroduce the second model that scope deliberately excludes. See `## Critical-path dependency on part one`.
-1a. **How dense does the framing target have to be — per frame, or a few keypoints per clip?** — Open, and worth settling during the handoff conversation rather than in research. The play does not teleport, so sparse keypoints plus interpolation may be indistinguishable from a dense track. If so, part one's job shrinks considerably and the contract should say keypoints, not a per-frame path. Owner: user + part one's owner.
-2. ~~**What exactly is the framing target?**~~ **Resolved in Phase 7:** the metadata field carries the position of the *play* — the action and the ball — not the position of the target player. This makes the contract consistent with FR-005 and gives part one an unambiguous job: return the path of the action. The target player's own position is no longer part of the required contract.
-3. **Is slow-motion / zoom-punch a deferred feature or a non-goal?** — It was cut from v1 scope in Phase 3, but deliberately not declared a non-goal in Phase 6. Treat it as the first candidate for v2 rather than as ruled out. Owner: user.
-4. **Does the attractiveness score stay in the contract with no v1 consumer?** — Kept as a carried-but-unused field after selection and dramaturgical ordering were dropped. If part one never produces it, the field should go. Owner: user, once part one is scoped.
-5. **How does the camera-path rule survive a 100x scale increase?** — Per-frame path computation stops being free at scale; the rule would have to run on sparser samples or consume pre-computed paths from part one. Not a v1 blocker, but it constrains the shape of the rule. Owner: user.
+1. ~~**Does the crop trust the upstream framing target, or detect the action itself?**~~ **Resolved by delivery (2026-11-21):** it trusts the upstream track. Part one produces ball positions for 95.2% of frames; there is nothing to re-derive.
+2. ~~**What exactly is the framing target?**~~ **Resolved in Phase 7:** the position of the play. The delivered data confirms this is what exists — a per-frame ball position, with player positions alongside it.
+3. ~~**How dense does the framing target have to be?**~~ **Resolved by delivery:** dense, at 16.67 fps effective. The sparse-keypoint question does not arise.
+4. ~~**Does the attractiveness score stay in the contract?**~~ **Resolved: removed.** Nothing produces it.
+5. **How much does the 26% of predicted (rather than detected) ball positions hurt the camera path?** — Unknown and directly load-bearing: the whole domain rule consumes this track. Measure before designing around it. Owner: `/10x-research`. Block: no, but it may change the smoothing approach.
+6. **How is "our player" resolved across fragmented identities?** — One player spans several persistent IDs, and jersey OCR returns numbers absent from both squads. Not needed for v1 (the user names timestamps) but it is the gate on ever automating moment-finding. Owner: `/10x-research`, or part one's owner.
+7. **Is slow-motion / zoom-punch a deferred feature or a non-goal?** — Cut from v1 scope in Phase 3, deliberately not declared a non-goal in Phase 6. First candidate for v2. Owner: user.
+8. **How does the camera-path rule survive a 100x scale increase?** — Per-frame path computation stops being free at scale; it would have to run on sparser samples or consume pre-computed paths. Not a v1 blocker, but it constrains the shape of the rule. Owner: user.
