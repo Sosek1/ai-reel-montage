@@ -8,8 +8,8 @@
 - **Date**: 2026-11-22
 - **Verdict**: NEEDS ATTENTION
 - **Findings**: 0 critical, 1 warning, 6 observations
-- **Triage**: 2026-11-22 — 5 fixed (F5 in part), 1 accepted, 1 pending on the user (F2)
-- **Verdict after fixes**: APPROVED, once the user confirms F2
+- **Triage**: complete on 2026-11-22 — 5 fixed (F5 in part), 1 accepted, 1 confirmed by the user (F2)
+- **Verdict after fixes**: APPROVED
 
 The implementation matches the plan closely, the two tests that carry the slice's thesis are
 strong and were shown able to fail, and every gate is green. One thing has to be fixed before the
@@ -169,7 +169,7 @@ repository was not modified):
   ball — and this slice is the roadmap's north star precisely because of what those rows show.
 - **Fix**: The user plays `out/s02.mp4`, `out/s02-centre.mp4` and `out/s02-gap.mp4` once and says
   so; no file changes unless something looks wrong.
-- **Decision**: PENDING — needs the user's eyes; no code change.
+- **Decision**: CONFIRMED by the user on 2026-11-22 after watching the three clips. 3.8: the ball stays in the picture throughout, as described. 3.9: with the fixed centre crop about half of the action is out of the picture, and the difference from the tracked clip is large, most of all at its end. 3.11: the ball is not visible (a player picks it up and carries it), the crop moves steadily towards the corner with no freeze and no jump, and reads as if the camera anticipated where he goes.
 
 ### F3 — The whole-match test proves containment, not centring, and no test anchors a real `x`
 
