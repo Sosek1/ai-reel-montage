@@ -96,11 +96,8 @@ def read_ball_track(stream: BinaryIO, frames: FrameRange, stride: int) -> BallTr
     last = frames.start_frame + frames.n_frames - 1
     kept: list[tuple[int, float | None]] = []
     for frame_idx, x in _samples(stream, stride):
-        if frame_idx <= first:
-            if x is not None:
-                kept.clear()  # a nearer position at or before the window supersedes the rest
-            kept.append((frame_idx, x))
-            continue
+        if frame_idx <= first and x is not None:
+            kept.clear()  # a nearer position at or before the window supersedes the rest
         kept.append((frame_idx, x))
         if x is not None and frame_idx >= last:
             break

@@ -203,6 +203,27 @@ def test_missing_tracking_file_exits_2_and_does_not_probe(
     assert shell.probed == [] and shell.rendered == []
 
 
+def test_output_equal_to_tracking_exits_2_and_does_not_render(
+    shell: Shell, capsys: pytest.CaptureFixture[str]
+) -> None:
+    argv = ["--input", "in.mp4", "--window", "10-20", "--tracking", "tracks.json"]
+    assert main([*argv, "--output", "./tracks.json"]) == 2
+    assert capsys.readouterr().err == "error: output would overwrite the tracking file\n"
+    assert shell.probed == [] and shell.track_reads == [] and shell.rendered == []
+
+
+def test_tracking_named_as_the_partial_file_exits_2_and_does_not_render(
+    shell: Shell, capsys: pytest.CaptureFixture[str]
+) -> None:
+    # render_clip writes and removes <output>.partial; a tracking file there would be destroyed.
+    argv = ["--input", "in.mp4", "--window", "10-20", "--tracking", "out/clip.mp4.partial"]
+    assert main([*argv, "--output", "out/clip.mp4"]) == 2
+    assert capsys.readouterr().err == (
+        "error: the output's temporary file would overwrite the tracking file\n"
+    )
+    assert shell.probed == [] and shell.track_reads == [] and shell.rendered == []
+
+
 def test_tracking_error_exits_1_and_does_not_render(
     shell: Shell, capsys: pytest.CaptureFixture[str]
 ) -> None:

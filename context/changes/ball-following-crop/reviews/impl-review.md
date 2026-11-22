@@ -8,6 +8,8 @@
 - **Date**: 2026-11-22
 - **Verdict**: NEEDS ATTENTION
 - **Findings**: 0 critical, 1 warning, 6 observations
+- **Triage**: 2026-11-22 — 5 fixed (F5 in part), 1 accepted, 1 pending on the user (F2)
+- **Verdict after fixes**: APPROVED, once the user confirms F2
 
 The implementation matches the plan closely, the two tests that carry the slice's thesis are
 strong and were shown able to fail, and every gate is green. One thing has to be fixed before the
@@ -150,7 +152,7 @@ repository was not modified):
   and `shell.probed == [] and shell.rendered == []`, for both the output and its `.partial` name.
   Add "the output may not be the tracking file" to the README sentence that already says it for
   the input.
-- **Decision**: PENDING
+- **Decision**: FIXED — `_path_problem` refuses an output, or an output temporary file, that is the tracking file (exit 2, before the probe); two unit cases added; README updated.
 
 ### F2 — Manual items 3.8, 3.9 and 3.11 are ticked without a recorded observation
 
@@ -167,7 +169,7 @@ repository was not modified):
   ball — and this slice is the roadmap's north star precisely because of what those rows show.
 - **Fix**: The user plays `out/s02.mp4`, `out/s02-centre.mp4` and `out/s02-gap.mp4` once and says
   so; no file changes unless something looks wrong.
-- **Decision**: PENDING
+- **Decision**: PENDING — needs the user's eyes; no code change.
 
 ### F3 — The whole-match test proves containment, not centring, and no test anchors a real `x`
 
@@ -189,7 +191,7 @@ repository was not modified):
 - **Fix**: Optional. In `test_window_samples_lie_on_the_three_frame_grid` add
   `assert track.x[0] == 310.05 and track.x[-1] == 1495.79` (samples 18 999 and 19 500, read in
   this review). The reader's output does not change in S-03, so the anchor survives it.
-- **Decision**: PENDING
+- **Decision**: FIXED — `test_window_samples_lie_on_the_three_frame_grid` pins `x` of samples 18 999 and 19 500.
 
 ### F4 — The right-edge guard exists only on the `check_follow` route
 
@@ -216,7 +218,7 @@ repository was not modified):
   - Tradeoff: changes the type S-03 builds on, and S-04 has to change it again.
   - Confidence: MEDIUM — cleaner, but pays twice.
   - Blind spot: None significant.
-- **Decision**: PENDING
+- **Decision**: FIXED via Fix A — recorded for the S-03 plan in `follow-ups/review-fixes.md`.
 
 ### F5 — Read → path → check → verdict is composed inside `cli.py`
 
@@ -231,7 +233,7 @@ repository was not modified):
   (`inside == tracked`) is stated in the `check_follow` docstring but decided in the CLI.
 - **Fix**: None now. In the S-05 plan, move the sequence out of `cli.py` (a shell-level function
   per window) and give `FollowCheck` a `passed` property so the rule lives with the counts.
-- **Decision**: PENDING
+- **Decision**: FIXED in part — `FollowCheck.passed` added and used by the CLI; moving the sequence out of `cli.py` is recorded for S-05 in `follow-ups/review-fixes.md`.
 
 ### F6 — What helps and what hinders a later move to `sendcmd`
 
@@ -266,7 +268,7 @@ repository was not modified):
     reaches ffmpeg.
 - **Fix**: None now. Carry this list into the S-05 research; if S-05 renders one window per
   ffmpeg run, no change is needed at all.
-- **Decision**: PENDING
+- **Decision**: ACCEPTED — no change in S-02; the list is recorded for the S-05 research in `follow-ups/review-fixes.md`.
 
 ### F7 — Small notes
 
@@ -287,4 +289,4 @@ repository was not modified):
   again for the command; harmless at these sizes.
 - **Fix**: (a) test the stop condition for every kept sample, or state "at least" in the
   docstring; (b) clamp to `2 * ((source_width - width) // 2)`; (c) leave.
-- **Decision**: PENDING
+- **Decision**: FIXED — (a) the stop condition is tested for every kept sample, with a unit case for a one-frame window; (b) the clamp's upper bound is rounded down to even, with a unit case; (c) left as it is.

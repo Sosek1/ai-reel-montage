@@ -43,6 +43,9 @@ def test_window_samples_lie_on_the_three_frame_grid(tracking_file: Path) -> None
     assert track.frame_idx[-1] == 19500
     assert np.all(np.diff(track.frame_idx) == 3)
     assert not np.isnan(track.x).any()
+    # Two values of the delivered file itself, so the real-file tier pins the field that is read.
+    assert track.x[0] == 310.05
+    assert track.x[-1] == 1495.79
 
 
 def test_load_ball_track_returns_the_window_track(tracking_file: Path) -> None:

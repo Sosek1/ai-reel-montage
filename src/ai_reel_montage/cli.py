@@ -98,7 +98,7 @@ def _follow(
     track = load_ball_track(tracking, frames, fps)
     path = crop_path(frames, track, width, crop)
     check = check_follow(path, ball_centre(frames, track), width, crop.width)
-    if check.inside < check.tracked:
+    if not check.passed:
         raise CameraPathError(
             f"ball outside the crop in {check.tracked - check.inside} of "
             f"{check.tracked} tracked frames"
@@ -114,12 +114,20 @@ def _path_problem(source: Path, output: Path, tracking: Path | None) -> str | No
     """The first reason the given paths cannot be used, checked before anything is probed."""
     if not _input_exists(source):
         return f"input file not found: {source}"
-    if output.resolve() == source.resolve():
-        return "output would overwrite the input"
-    if partial_path(output).resolve() == source.resolve():
-        return "the output's temporary file would overwrite the input"
     if tracking is not None and not _tracking_exists(tracking):
         return f"tracking file not found: {tracking}"
+    # Both inputs are protected alike: the output is renamed over, and its temporary file is
+    # written and removed, so an input in either place would be destroyed.
+    inputs = (
+        [(source, "input")]
+        if tracking is None
+        else [(source, "input"), (tracking, "tracking file")]
+    )
+    for path, name in inputs:
+        if output.resolve() == path.resolve():
+            return f"output would overwrite the {name}"
+        if partial_path(output).resolve() == path.resolve():
+            return f"the output's temporary file would overwrite the {name}"
     return None
 
 

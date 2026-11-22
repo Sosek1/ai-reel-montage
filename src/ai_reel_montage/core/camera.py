@@ -6,7 +6,8 @@ Rules fixed here (each has a named test):
   position; outside the first and last such sample it holds the nearest known position.
 - Crop x is ``centre - crop_width / 2`` rounded to the nearest even integer, ties upward
   (``2 * floor(v / 2 + 1/2)``; ``numpy.round`` would round ties to even), then clamped to
-  ``0 .. source_width - crop_width``. ffmpeg silently rounds an odd x down, so x is even here.
+  ``0 .. source_width - crop_width``, the upper bound rounded down to even. ffmpeg silently
+  rounds an odd x down, so x is even here.
 - A frame is a fallback frame unless it coincides with a positioned sample or lies between two
   positioned samples that are neighbours in the track. With no position at all, every frame is a
   fallback frame at the centre crop's x.
@@ -72,6 +73,11 @@ class FollowCheck:
     inside: int
     fallback: int
 
+    @property
+    def passed(self) -> bool:
+        """The ball is inside the crop in every tracked frame (vacuously so with none)."""
+        return self.inside == self.tracked
+
 
 def _frame_numbers(frames: FrameRange) -> NDArray[np.int64]:
     return np.arange(frames.start_frame, frames.start_frame + frames.n_frames, dtype=np.int64)
@@ -117,7 +123,8 @@ def crop_path(frames: FrameRange, track: BallTrack, source_width: int, centre: C
         x = np.full(frames.n_frames, centre.x, dtype=np.int64)
     else:
         raw = _even_round_up(centres - centre.width / 2)
-        x = np.clip(raw, 0, source_width - centre.width)
+        # The bound itself is kept even, so the clamp cannot produce an odd x on an odd margin.
+        x = np.clip(raw, 0, 2 * ((source_width - centre.width) // 2))
     return CropPath(x=x, fallback=_fallback_flags(frames, track))
 
 

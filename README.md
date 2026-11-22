@@ -22,7 +22,7 @@ Cut one window of a recording into a vertical 1080x1920 H.264 clip with the matc
 A window that is empty, reversed or reaches outside the recording is rejected: nothing is written,
 the message names the window and the recording length, and the exit status is 2. A render or probe
 failure exits with status 1. The same inputs give a byte-identical clip. An existing output file is
-overwritten; the output may not be the input file.
+overwritten; the output may be neither the input file nor the tracking file.
 
 ### Following the ball
 

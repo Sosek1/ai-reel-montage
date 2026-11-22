@@ -72,6 +72,12 @@ def test_crop_is_clamped_at_both_picture_edges() -> None:
     assert ball_inside(path, centres, CENTRE.width)[[0, 3]].all()
 
 
+def test_right_clamp_stays_even_when_the_margin_is_odd() -> None:
+    # Source 1921 wide: the margin is 1313, the largest even x is 1312.
+    path = crop_path(FrameRange(0, 1), _track([0], [1919.0]), 1921, CENTRE)
+    assert path.x.tolist() == [1312]
+
+
 def test_run_without_ball_is_crossed_in_a_straight_line() -> None:
     track = _gap_track()
     frames = FrameRange(0, 10)
@@ -195,6 +201,12 @@ def test_check_reports_a_tracked_frame_outside_the_crop() -> None:
     result = check_follow(path, np.array([1000.0, 1000.0]), SOURCE_WIDTH, 608)
     assert result.inside < result.tracked
     assert result == FollowCheck(tracked=2, inside=1, fallback=0)
+    assert not result.passed
+
+
+def test_check_passes_when_every_tracked_frame_is_inside() -> None:
+    assert FollowCheck(tracked=2, inside=2, fallback=8).passed
+    assert FollowCheck(tracked=0, inside=0, fallback=5).passed
 
 
 def test_check_rejects_a_path_beyond_the_right_edge() -> None:

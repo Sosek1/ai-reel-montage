@@ -75,6 +75,13 @@ def test_stops_reading_after_the_track_is_complete() -> None:
     assert track.frame_idx.tolist() == [0, 3, 6, 9]
 
 
+def test_one_frame_window_on_a_positioned_sample_needs_that_sample_only() -> None:
+    body = json.dumps({"frame_idx": 6, "ball": {"x": 100.0}})
+    doc = io.BytesIO(('{"frames": [' + body + ",{ this is not json").encode())
+    track = read_ball_track(doc, FrameRange(6, 1), 3)
+    assert track.frame_idx.tolist() == [6]
+
+
 def test_non_increasing_frame_idx_is_rejected() -> None:
     doc = _doc([(0, 1.0), (3, 1.0), (3, 1.0)])
     with pytest.raises(TrackingError, match="frame 3"):
