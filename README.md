@@ -23,3 +23,30 @@ A window that is empty, reversed or reaches outside the recording is rejected: n
 the message names the window and the recording length, and the exit status is 2. A render or probe
 failure exits with status 1. The same inputs give a byte-identical clip. An existing output file is
 overwritten; the output may not be the input file.
+
+### Following the ball
+
+Add the tracking file and the crop follows the ball instead of sitting in the centre:
+
+    uv run ai-reel-montage --input match.mp4 --tracking full_match_tracks.json \
+      --window 6:20-6:30 --output out/clip.mp4
+
+The crop is 608x1080 and moves sideways only, centred on the ball in every frame as far as the
+picture edge allows. It follows the raw track with no smoothing, so the framing is jittery.
+Without `--tracking` the crop stays fixed in the centre of the picture and the success line ends
+with `centre crop`.
+
+The tracking file holds a position every third frame and some stretches without a ball. The clip
+is always produced; where the file has no position the crop is decided by three rules:
+
+- across a stretch without a ball the crop moves in a straight line from the last known position
+  to the next known one;
+- when a position is known on one side only (the window touches the start or end of the track),
+  the nearest known position is held;
+- when the track holds no position at all, the crop stays in the centre.
+
+The success line reports `ball inside crop in A/B tracked frames, C frames on fallback`. `B` counts
+the frames for which the file gives a position (at the frame or on both sides of it) and `A` how
+many of them have the ball inside the crop; `C` counts the frames framed by the rules above, which
+are not checked against any ball. If `A` is less than `B` nothing is written and the exit status
+is 1. A window entirely inside a stretch without a ball prints `0/0`.

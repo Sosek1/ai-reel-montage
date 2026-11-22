@@ -15,8 +15,12 @@ from dataclasses import dataclass
 from fractions import Fraction
 from pathlib import Path
 
+from ai_reel_montage.core.camera import CropPath, crop_x_expression
 from ai_reel_montage.core.framing import OUTPUT_HEIGHT, OUTPUT_WIDTH, CropBox
 from ai_reel_montage.core.window import FrameRange, duration_time, seek_time
+
+# Linux caps a single command-line argument at 131 072 bytes; the crop expression is one argument.
+MAX_EXPRESSION_CHARS = 100_000
 
 
 class VideoError(RuntimeError):
@@ -147,8 +151,21 @@ def _publishing(source: Path, output: Path, n_frames: int) -> Iterator[Path]:
                 partial.unlink(missing_ok=True)
 
 
-def _render_command(
-    source: Path, frames: FrameRange, fps: Fraction, crop: CropBox, target: Path
+def crop_filter(crop: CropBox, path: CropPath | None) -> str:
+    """The ``crop=...`` filter: fixed as in S-01, or with x as a quoted expression in ``n``."""
+    if path is None:
+        return f"crop={crop.width}:{crop.height}:{crop.x}:{crop.y}"
+    # Single quotes keep the expression's commas from splitting the filter chain.
+    return f"crop={crop.width}:{crop.height}:x='{crop_x_expression(path.x)}':y={crop.y}"
+
+
+def _render_command(  # noqa: PLR0913, PLR0917 - one argument per command ingredient
+    source: Path,
+    frames: FrameRange,
+    fps: Fraction,
+    crop: CropBox,
+    target: Path,
+    path: CropPath | None = None,
 ) -> list[str]:
     return [
         "ffmpeg",
@@ -169,8 +186,7 @@ def _render_command(
         "-t",
         duration_time(frames.n_frames, fps),
         "-vf",
-        f"crop={crop.width}:{crop.height}:{crop.x}:{crop.y},"
-        f"scale={OUTPUT_WIDTH}:{OUTPUT_HEIGHT},setsar=1",
+        f"{crop_filter(crop, path)},scale={OUTPUT_WIDTH}:{OUTPUT_HEIGHT},setsar=1",
         "-c:v",
         "libx264",
         "-preset",
@@ -192,9 +208,25 @@ def _render_command(
     ]
 
 
-def render_clip(
-    source: Path, frames: FrameRange, fps: Fraction, crop: CropBox, output: Path
+def render_clip(  # noqa: PLR0913, PLR0917 - signature fixed by the S-02 plan
+    source: Path,
+    frames: FrameRange,
+    fps: Fraction,
+    crop: CropBox,
+    output: Path,
+    path: CropPath | None = None,
 ) -> None:
-    """Render ``frames`` of ``source`` as a 1080x1920 clip at ``output``, atomically."""
+    """Render ``frames`` of ``source`` as a 1080x1920 clip at ``output``, atomically.
+
+    With ``path`` the crop x follows it, one value per output frame; without, the crop is fixed.
+    """
+    if path is not None:
+        if len(path.x) != frames.n_frames:
+            raise VideoError(f"crop path has {len(path.x)} positions for {frames.n_frames} frames")
+        if len(crop_x_expression(path.x)) > MAX_EXPRESSION_CHARS:
+            raise VideoError(
+                f"crop expression exceeds {MAX_EXPRESSION_CHARS} characters; "
+                "the window is too long for one render"
+            )
     with _publishing(source, output, frames.n_frames) as partial:
-        _run(_render_command(source, frames, fps, crop, partial))
+        _run(_render_command(source, frames, fps, crop, partial, path))
