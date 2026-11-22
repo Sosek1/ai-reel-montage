@@ -30,3 +30,17 @@ def source_video() -> Path:
         names = ", ".join(str(p.relative_to(_REPO_ROOT)) for p in found)
         pytest.fail(f"expected a single recording under transfer-*/, found: {names}", pytrace=False)
     return found[0]
+
+
+@pytest.fixture(scope="session")
+def tracking_file() -> Path:
+    """The single ``transfer-*/full_match_tracks.json``; skips (or fails) when it is absent."""
+    found = sorted(_REPO_ROOT.glob("transfer-*/full_match_tracks.json"))
+    if not found:
+        _unavailable("no tracking file under transfer-*/")
+    if len(found) > 1:
+        names = ", ".join(str(p.relative_to(_REPO_ROOT)) for p in found)
+        pytest.fail(
+            f"expected a single tracking file under transfer-*/, found: {names}", pytrace=False
+        )
+    return found[0]

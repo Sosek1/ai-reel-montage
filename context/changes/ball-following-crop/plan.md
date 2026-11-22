@@ -684,13 +684,13 @@ whole line.
 
 #### Automated
 
-- [ ] 2.1 Integration tests pass with the source required: `REEL_REQUIRE_SOURCE=1 uv run pytest -m integration`
-- [ ] 2.2 Unit tests pass: `uv run pytest -m "not integration"`
-- [ ] 2.3 Type checking passes: `uv run mypy`
-- [ ] 2.4 Linting passes: `uv run ruff check`
-- [ ] 2.5 Formatting is clean: `uv run ruff format --check src tests`
-- [ ] 2.6 The ball is inside the crop at every positioned sample of the match
-- [ ] 2.7 No whole-file load of the tracking JSON exists
+- [x] 2.1 Integration tests pass with the source required: `REEL_REQUIRE_SOURCE=1 uv run pytest -m integration`
+- [x] 2.2 Unit tests pass: `uv run pytest -m "not integration"`
+- [x] 2.3 Type checking passes: `uv run mypy`
+- [x] 2.4 Linting passes: `uv run ruff check`
+- [x] 2.5 Formatting is clean: `uv run ruff format --check src tests`
+- [x] 2.6 The ball is inside the crop at every positioned sample of the match
+- [x] 2.7 No whole-file load of the tracking JSON exists
 
 ### Phase 3: Moving crop in the render, `--tracking` on the CLI, end-to-end check
 
