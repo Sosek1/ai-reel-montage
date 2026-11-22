@@ -696,17 +696,17 @@ whole line.
 
 #### Automated
 
-- [x] 3.1 Full test suite passes with the source required: `REEL_REQUIRE_SOURCE=1 uv run pytest`
-- [x] 3.2 Type checking passes: `uv run mypy`
-- [x] 3.3 Linting passes: `uv run ruff check`
-- [x] 3.4 Formatting is clean: `uv run ruff format --check src tests`
-- [x] 3.5 Help lists the new argument
-- [x] 3.6 The command verifies its own clip
-- [x] 3.7 Two runs give the same bytes
+- [x] 3.1 Full test suite passes with the source required: `REEL_REQUIRE_SOURCE=1 uv run pytest` — e7deb75
+- [x] 3.2 Type checking passes: `uv run mypy` — e7deb75
+- [x] 3.3 Linting passes: `uv run ruff check` — e7deb75
+- [x] 3.4 Formatting is clean: `uv run ruff format --check src tests` — e7deb75
+- [x] 3.5 Help lists the new argument — e7deb75
+- [x] 3.6 The command verifies its own clip — e7deb75
+- [x] 3.7 Two runs give the same bytes — e7deb75
 
 #### Manual
 
-- [x] 3.8 `out/s02.mp4` plays and the ball stays in the picture for the whole clip
-- [x] 3.9 The same window rendered without `--tracking` shows a visibly different, fixed framing
-- [x] 3.10 A 10 s window in minute 90 renders in under 45 s
-- [x] 3.11 Window `6:02-6:12` plays with the crop moving steadily through the stretch without a ball
+- [x] 3.8 `out/s02.mp4` plays and the ball stays in the picture for the whole clip — e7deb75
+- [x] 3.9 The same window rendered without `--tracking` shows a visibly different, fixed framing — e7deb75
+- [x] 3.10 A 10 s window in minute 90 renders in under 45 s — e7deb75
+- [x] 3.11 Window `6:02-6:12` plays with the crop moving steadily through the stretch without a ball — e7deb75
