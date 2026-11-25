@@ -1,9 +1,9 @@
 ---
 project: "AI Reel Montage"
-version: 1
+version: 2
 status: draft
 created: 2026-11-21
-updated: 2026-11-22
+updated: 2026-11-25
 prd_version: 1
 main_goal: speed
 top_blocker: decisions
@@ -43,10 +43,10 @@ Lower-league footballers need reels for their own profiles, especially around tr
 | ---- | -------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------- | -------- |
 | S-01 | first-playable-clip        | name one timestamp window and get a playable 9:16 clip trimmed from the match     | —                                              | FR-001a, US-01             | done     |
 | S-02 | ball-following-crop        | get a clip whose crop follows the ball from the tracking data                     | S-01                                           | FR-001, FR-002, FR-005, US-01 | in-progress |
-| S-03 | smooth-camera-path         | get a clip whose frame moves like deliberate camera work, not a jittery follow    | S-02, evaluation windows named by the user     | FR-002, FR-005, US-01      | proposed |
+| S-03 | smooth-camera-path         | get a clip whose frame moves like deliberate camera work, not a jittery follow    | S-02, evaluation windows (named, see `## Evaluation set`)     | FR-002, FR-005, US-01      | proposed |
 | S-04 | adaptive-zoom              | get a clip that is wide while play builds and tight at the decisive moment        | S-03                                           | FR-005, US-01              | proposed |
-| S-05 | multi-window-reel          | name 3–5 windows and get one chronological, hard-cut reel, identical on re-runs   | S-02, evaluation windows named by the user     | FR-004, FR-006, FR-007, US-01 | proposed |
-| S-06 | evaluation-set-verdict     | watch reels from the named evaluation windows and record a yes/no "would I post"  | S-04, S-05, evaluation windows named by the user | US-01                    | blocked  |
+| S-05 | multi-window-reel          | name 3–5 windows and get one chronological, hard-cut reel, identical on re-runs   | S-02, evaluation windows (named, see `## Evaluation set`)     | FR-004, FR-006, FR-007, US-01 | proposed |
+| S-06 | evaluation-set-verdict     | watch reels from the named evaluation windows and record a yes/no "would I post"  | S-04, S-05, evaluation windows (named, see `## Evaluation set`) | US-01                    | proposed |
 
 ## Baseline
 
@@ -99,7 +99,7 @@ None. Every technical element is introduced inside the first slice that needs it
 - **Outcome:** user can get a clip whose frame moves like deliberate camera work — continuous, damped, free of jitter from noisy or predicted ball samples.
 - **Change ID:** smooth-camera-path
 - **PRD refs:** FR-002, FR-005, US-01
-- **Prerequisites:** S-02, evaluation windows named by the user
+- **Prerequisites:** S-02, evaluation windows (named, see `## Evaluation set`)
 - **Parallel with:** S-05
 - **Blockers:** —
 - **Unknowns:**
@@ -125,7 +125,7 @@ None. Every technical element is introduced inside the first slice that needs it
 - **Outcome:** user can name 3–5 windows and get one chronological, hard-cut vertical reel that is byte-identical on re-runs and survives one unreadable window.
 - **Change ID:** multi-window-reel
 - **PRD refs:** FR-004, FR-006, FR-007, US-01
-- **Prerequisites:** S-02, evaluation windows named by the user
+- **Prerequisites:** S-02, evaluation windows (named, see `## Evaluation set`)
 - **Parallel with:** S-03, S-04
 - **Blockers:** —
 - **Unknowns:** —
@@ -137,11 +137,11 @@ None. Every technical element is introduced inside the first slice that needs it
 - **Outcome:** user can watch the reels generated from the named evaluation windows and record a yes/no "would I post this?" for each.
 - **Change ID:** evaluation-set-verdict
 - **PRD refs:** US-01
-- **Prerequisites:** S-04, S-05, evaluation windows named by the user
+- **Prerequisites:** S-04, S-05, evaluation windows (named, see `## Evaluation set`)
 - **Parallel with:** —
 - **Blockers:** The user has not yet named the 3–5 timestamp windows from the match.
 - **Unknowns:**
-  - Which 3–5 windows of the 99-minute match form the evaluation set? — Owner: user. Block: yes.
+  - ~~Which 3–5 windows of the 99-minute match form the evaluation set?~~ — Resolved 2026-11-25: 06:10–07:10 and 18:35–19:35, see `## Evaluation set`. Block: no.
 - **Risk:** This is the product's only success measure and it is a human judgement, so it needs a fixed set named in advance or the verdict is not comparable between engine changes. It closes the milestone; if the majority of reels are judged "no", the finding goes back into the roadmap as an amendment, not into this slice.
 - **Status:** blocked
 
@@ -151,10 +151,26 @@ None. Every technical element is introduced inside the first slice that needs it
 | ---------- | ---------------------- | ------------------------------------------------------- | --------------------- | --------------------------------------------------------------- |
 | S-01       | first-playable-clip    | Trim a named window into a playable 9:16 clip           | yes                   | Run `/10x-new first-playable-clip`                              |
 | S-02       | ball-following-crop    | Crop follows the ball from tracking data                | no                    | Run `/10x-research ball-following-crop`                |
-| S-03       | smooth-camera-path     | Smooth, damped camera path from the ball track          | no                    | Waits for S-02 and the evaluation windows; research OQ 1 first  |
+| S-03       | smooth-camera-path     | Smooth, damped camera path from the ball track          | no                    | Waits for S-02; the windows are named; research OQ 1 first      |
 | S-04       | adaptive-zoom          | Time-varying zoom: wide while building, tight at decisive moment | no           | Waits for S-03                                                  |
-| S-05       | multi-window-reel      | Chronological hard-cut reel from 3–5 windows            | no                    | Waits for S-02 and the evaluation windows                       |
-| S-06       | evaluation-set-verdict | Human verdict on reels from the evaluation windows      | no                    | Blocked on the user naming the windows                          |
+| S-05       | multi-window-reel      | Chronological hard-cut reel from 3–5 windows            | no                    | Waits for S-02; the windows are named                           |
+| S-06       | evaluation-set-verdict | Human verdict on reels from the evaluation windows      | no                    | Waits for S-04 and S-05; the windows are named                  |
+
+## Evaluation set
+
+Named by the user on 2026-11-25, resolving Open Roadmap Question 5. These are the windows every
+rendered judgement from S-03 on is made against; both are reported by
+`transfer-01a1f923/match_tracking_report.md` as having full ball coverage, so what is judged is
+the camera work and not the handling of missing data.
+
+| Window | Source frames | Why |
+| --- | --- | --- |
+| 06:10–07:10 | 18 500–21 500 | 100% ball coverage |
+| 18:35–19:35 | 55 750–58 750 | 100% ball coverage |
+
+A third window crossing one of the 45 stretches without a ball (for example 6:02–6:12, already
+exercised in S-02) may be added later; it was deliberately left out so that the first judgement of
+smoothing is not confounded with the fallback rule.
 
 ## Open Roadmap Questions
 
@@ -162,7 +178,7 @@ None. Every technical element is introduced inside the first slice that needs it
 2. **How is "our player" resolved across fragmented identities?** — Owner: `/10x-research`, or part one's owner. Block: none for v1; it is the gate on ever automating moment-finding. Research, not a slice.
 3. **Is slow-motion / zoom-punch a deferred feature or a non-goal?** — Owner: user. Block: none; first candidate for v2.
 4. **How does the camera-path rule survive a 100x scale increase?** — Owner: user. Block: none; constrains the shape of the rule, not v1.
-5. **Which 3–5 timestamp windows form the evaluation set?** — Owner: user. Block: S-03 and S-05 (to judge their output), S-06 (hard). Name them before S-03 is planned, since every rendered judgement from S-03 on needs them.
+5. ~~**Which 3–5 timestamp windows form the evaluation set?**~~ — **Resolved 2026-11-25:** 06:10–07:10 and 18:35–19:35, see `## Evaluation set`. No longer blocks S-03, S-05 or S-06.
 
 ## Parked
 
