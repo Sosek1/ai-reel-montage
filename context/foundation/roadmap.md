@@ -43,7 +43,7 @@ Lower-league footballers need reels for their own profiles, especially around tr
 | ---- | -------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------- | -------- |
 | S-01 | first-playable-clip        | name one timestamp window and get a playable 9:16 clip trimmed from the match     | —                                              | FR-001a, US-01             | done     |
 | S-02 | ball-following-crop        | get a clip whose crop follows the ball from the tracking data                     | S-01                                           | FR-001, FR-002, FR-005, US-01 | done     |
-| S-03 | smooth-camera-path         | get a clip whose frame moves like deliberate camera work, not a jittery follow    | S-02, evaluation windows (named, see `## Evaluation set`)     | FR-002, FR-005, US-01      | proposed |
+| S-03 | smooth-camera-path         | get a clip whose frame moves like deliberate camera work, not a jittery follow    | S-02, evaluation windows (named, see `## Evaluation set`)     | FR-002, FR-005, US-01      | ready    |
 | S-04 | adaptive-zoom              | get a clip that is wide while play builds and tight at the decisive moment        | S-03                                           | FR-005, US-01              | proposed |
 | S-05 | multi-window-reel          | name 3–5 windows and get one chronological, hard-cut reel, identical on re-runs   | S-02, evaluation windows (named, see `## Evaluation set`)     | FR-004, FR-006, FR-007, US-01 | proposed |
 | S-06 | evaluation-set-verdict     | watch reels from the named evaluation windows and record a yes/no "would I post"  | S-04, S-05, evaluation windows (named, see `## Evaluation set`) | US-01                    | proposed |
@@ -108,7 +108,7 @@ None. Every technical element is introduced inside the first slice that needs it
   - Every crop path must go through `check_follow` before `render_clip`. The right-edge bound (`x <= source_width - crop_width`) is enforced by `check_follow` only; ffmpeg clamps an out-of-range x silently, and a smoothed path can overshoot at the touchline. The plan must keep that call on the route to the render and add a named test of the smoothed path at the right edge. If a second production caller of `render_clip` appears, consider making the bound part of `CropPath` (S-04 turns it into a per-frame bound).
   - Keep `test_ball_is_inside_the_crop_over_the_whole_match` as it is and run it against the smoothed function: once the crop is no longer centred by construction it is the assertion that can really fail.
 - **Risk:** This is where the product's value is made or lost, and it is the heaviest slice by design. It is built test-first as a pure computation (ball track in, path out, no files), but "reads as deliberate" can only be judged by watching rendered clips, hence the dependency on the user's named windows.
-- **Status:** proposed
+- **Status:** ready
 
 ### S-04: Adaptive zoom
 
@@ -157,7 +157,7 @@ None. Every technical element is introduced inside the first slice that needs it
 | ---------- | ---------------------- | ------------------------------------------------------- | --------------------- | --------------------------------------------------------------- |
 | S-01       | first-playable-clip    | Trim a named window into a playable 9:16 clip           | yes                   | Run `/10x-new first-playable-clip`                              |
 | S-02       | ball-following-crop    | Crop follows the ball from tracking data                | no                    | Run `/10x-research ball-following-crop`                |
-| S-03       | smooth-camera-path     | Smooth, damped camera path from the ball track          | no                    | Waits for S-02; the windows are named; research OQ 1 first      |
+| S-03       | smooth-camera-path     | Smooth, damped camera path from the ball track          | no                    | Run `/10x-research smooth-camera-path`; research OQ 1 first    |
 | S-04       | adaptive-zoom          | Time-varying zoom: wide while building, tight at decisive moment | no           | Waits for S-03                                                  |
 | S-05       | multi-window-reel      | Chronological hard-cut reel from 3–5 windows            | no                    | Waits for S-02; the windows are named                           |
 | S-06       | evaluation-set-verdict | Human verdict on reels from the evaluation windows      | no                    | Waits for S-04 and S-05; the windows are named                  |
