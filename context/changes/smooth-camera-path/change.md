@@ -1,7 +1,7 @@
 ---
 change_id: smooth-camera-path
 title: Smooth camera path
-status: new
+status: preparing
 created: 2026-11-25
 updated: 2026-11-25
 archived_at: null
