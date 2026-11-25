@@ -42,7 +42,7 @@ Lower-league footballers need reels for their own profiles, especially around tr
 | ID   | Change ID                  | Outcome (user can …)                                                              | Prerequisites                                  | PRD refs                   | Status   |
 | ---- | -------------------------- | --------------------------------------------------------------------------------- | ---------------------------------------------- | -------------------------- | -------- |
 | S-01 | first-playable-clip        | name one timestamp window and get a playable 9:16 clip trimmed from the match     | —                                              | FR-001a, US-01             | done     |
-| S-02 | ball-following-crop        | get a clip whose crop follows the ball from the tracking data                     | S-01                                           | FR-001, FR-002, FR-005, US-01 | in-progress |
+| S-02 | ball-following-crop        | get a clip whose crop follows the ball from the tracking data                     | S-01                                           | FR-001, FR-002, FR-005, US-01 | done     |
 | S-03 | smooth-camera-path         | get a clip whose frame moves like deliberate camera work, not a jittery follow    | S-02, evaluation windows (named, see `## Evaluation set`)     | FR-002, FR-005, US-01      | proposed |
 | S-04 | adaptive-zoom              | get a clip that is wide while play builds and tight at the decisive moment        | S-03                                           | FR-005, US-01              | proposed |
 | S-05 | multi-window-reel          | name 3–5 windows and get one chronological, hard-cut reel, identical on re-runs   | S-02, evaluation windows (named, see `## Evaluation set`)     | FR-004, FR-006, FR-007, US-01 | proposed |
@@ -92,7 +92,7 @@ None. Every technical element is introduced inside the first slice that needs it
 - **Unknowns:**
   - Which documented fallback keeps the crop stable where the ball position is missing or predicted rather than detected (about 26% of positions)? — Owner: user. Block: no. (Starts as hold-last-known; refined by S-03 and by Open Roadmap Question 1.)
 - **Risk:** The first contact between the tracking file and real footage: the tracking is sampled at 16.67 fps over a 50 fps source, so times have to be mapped between the two, and the file is 398 MB so only the needed window may be read. This is the earliest slice that can show whether the play stays in frame; it is verified automatically (ball inside the crop for every output frame), not by eye.
-- **Status:** in-progress
+- **Status:** done
 
 ### S-03: Smooth camera path
 
@@ -104,6 +104,9 @@ None. Every technical element is introduced inside the first slice that needs it
 - **Blockers:** —
 - **Unknowns:**
   - How much does the predicted share of the ball track hurt the path, and does the smoothing need to treat predicted samples differently from detected ones? — Owner: `/10x-research`. Block: no. (Open Roadmap Question 1; run it before `/10x-plan` on this slice because it may change the smoothing approach.)
+- **Carried from the S-02 implementation review** (full text: `context/archive/2026-11-21-ball-following-crop/follow-ups/review-fixes.md`, F4):
+  - Every crop path must go through `check_follow` before `render_clip`. The right-edge bound (`x <= source_width - crop_width`) is enforced by `check_follow` only; ffmpeg clamps an out-of-range x silently, and a smoothed path can overshoot at the touchline. The plan must keep that call on the route to the render and add a named test of the smoothed path at the right edge. If a second production caller of `render_clip` appears, consider making the bound part of `CropPath` (S-04 turns it into a per-frame bound).
+  - Keep `test_ball_is_inside_the_crop_over_the_whole_match` as it is and run it against the smoothed function: once the crop is no longer centred by construction it is the assertion that can really fail.
 - **Risk:** This is where the product's value is made or lost, and it is the heaviest slice by design. It is built test-first as a pure computation (ball track in, path out, no files), but "reads as deliberate" can only be judged by watching rendered clips, hence the dependency on the user's named windows.
 - **Status:** proposed
 
@@ -129,6 +132,9 @@ None. Every technical element is introduced inside the first slice that needs it
 - **Parallel with:** S-03, S-04
 - **Blockers:** —
 - **Unknowns:** —
+- **Carried from the S-02 implementation review** (full text: `context/archive/2026-11-21-ball-following-crop/follow-ups/review-fixes.md`, F5 and F6) — for the research and the plan:
+  - F5: move the read → path → check → verdict sequence out of `cli.py` (`cli._follow`) into a shell-level function run once per window; `cli.py` only formats the result. `FollowCheck.passed` already holds the pass rule.
+  - F6: the crop expression and `sendcmd`. The flat-sum expression costs about 9.6 characters per output frame, is refused above 100 000 characters and is evaluated term by term per frame. One ffmpeg run per window keeps it at window size with no change. If one run must carry several windows, the cheapest option is the same expression read from a file (`-/filter:v`); `sendcmd` is helped by `CropPath` crossing the boundary as data and `crop_filter` building the text in one place, and hindered by `crop_filter` returning one self-contained string that three tests pin, the script being a second temporary file while `_publishing` cleans up one, the size guard being in characters, `_raw_frames` in the pixel test taking filter text only, and change times needing exact frame times that nothing formats yet.
 - **Risk:** Mostly plumbing, so deliberately small; sequenced against S-02 rather than the finished camera so the assembly, determinism and render-time guardrails are proven early on whatever path the engine currently has, and S-03/S-04 improve the clips inside it without touching assembly. A window that fails yields a reel from the remaining windows plus a message naming it, never an empty result.
 - **Status:** proposed
 
@@ -194,3 +200,4 @@ smoothing is not confounded with the fallback rule.
 ## Done
 
 - **S-01: First playable clip** — Archived 2026-11-21 → `context/archive/2026-11-21-first-playable-clip/`. Lesson: —.
+- **S-02: Ball-following crop** — Archived 2026-11-25 → `context/archive/2026-11-21-ball-following-crop/`. Lesson: —.

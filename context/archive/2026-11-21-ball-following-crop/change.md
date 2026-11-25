@@ -1,10 +1,10 @@
 ---
 change_id: ball-following-crop
 title: Ball-following crop
-status: impl_reviewed
+status: archived
 created: 2026-11-21
-updated: 2026-11-22
-archived_at: null
+updated: 2026-11-25
+archived_at: 2026-11-25T17:14:36Z
 ---
 
 ## Notes
